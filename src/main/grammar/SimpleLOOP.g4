@@ -14,25 +14,72 @@ Class
     ;
 
 ClassBody
+    :ClassStatement
+    |ClassScope
+    |MethodDeclaration
+    ;
+
+MethodArguments
+    :MethodArgument Comma MethodArguments
+    |MethodArgument
     ;
 
 MethodArgument
-    : MethodArgument Comma MethodArgument
-    | ArgumentType IDENTIFIER
+    : ArgumentType IDENTIFIER
+    ;
 
+
+
+MethodBodyReturn
+    :LBrack Statement NewLine RETURN RBrack // expression or assignment
     ;
+
 MethodDeclaration
-    : Scope ReturnType IDENTIFIER LPar MethodArgument? RPar (LBrack NewLine MethodBody RBrack | NewLine ReturnStatement NewLine)//(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
-    : Scope IDENTIFIER LPar MethodArgument? RPar (LBrack NewLine MethodBody RBrack | NewLine Statement NewLine)//(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
+    : AccessModifier ReturnType IDENTIFIER LPar MethodArguments? RPar MethodBodyReturn//(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
+    | AccessModifier IDENTIFIER LPar MethodArguments? RPar NewLine Scope//(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
     ;
+
+
+Expression
+    :ArithmetciExpr
+    |ComparisionExpr
+    |LogicalExpr
+    |ConditionalExpr
+    ;
+
+
+
 ClassDeclaration
     : type r = IDENTIFIER{System.out.println("VarDec : " + $r.text);} LPar args RPar Begin NewLine+ Set{System.out.println("Setter");} mainStatementBlock NewLine+ Get{System.out.println("Getter");} mainStatementBlock NewLine+ End
     | declarationStatement
     ;
 
+Scope
+    : (Statement Newline)*
+    | LBrack Statement RBrack
+
+    ;
+
+ClassScope
+    : (ClassStatement Newline)*
+    | LBrack ClassStatement RBrack
+    ;
+
 Statement
     : Expression
-    | Type? IDENTIFIER (Dot IDENTIFIER)? (Equals Expression)?
+    | IfStatement
+    | LoopStatement
+    | Scope
+    | Assignment
+    | Decleration
+    ;
+
+ClassStatement
+    : Assignment
+    | ClassScope
+    | Decleration
+    ;
+   // | Type? IDENTIFIER (Dot IDENTIFIER)? (Equals Expression)?
     /*
     x //
     self.y //
@@ -41,14 +88,62 @@ Statement
     int x //
     int x =
     */
+// todo COPYED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//todo
+expression:
+    inlineConditionalExpression (op = ASSIGN expression )? ;
+
+//todo
+
+inlineConditionalExpression
+    ://todo
+    |orExpression
     ;
 
+orExpression:
+    andExpression (op = OR andExpression )*;
+
+//todo
+andExpression:
+    equalityExpression (op = AND equalityExpression )*;
+
+//todo
+equalityExpression:
+    relationalExpression (op = EQUAL relationalExpression )*;
+
+//todo
+relationalExpression:
+    additiveExpression ((op = GREATER_THAN | op = LESS_THAN) additiveExpression )*;
+
+//todo
+additiveExpression:
+    multiplicativeExpression ((op = PLUS | op = MINUS) multiplicativeExpression )*;
+
+//todo
+multiplicativeExpression:
+    preUnaryExpression ((op = MULT | op = DIVIDE) preUnaryExpression )*;
+
+//todo
+preUnaryExpression:
+    ((op = MINUS | op = EXCLAMATION_MARK) preUnaryExpression ) | postUnaryExpression;
+
+postUnaryExpression:
+     accessExpression (PLUSPLUS|MINUSMINUS)?
+    ;
+
+//todo
+accessExpression:
+    otherExpression ((LPAR functionArguments RPAR) | (DOT identifier))*  ((LBRACK expression RBRACK) | (DOT identifier))*;
+
+//todo
+otherExpression:
+    value | identifier | LPAR (functionArguments) RPAR | size | append ;
 
 ReturnStatement
 //TODO: function or variable return
     :RETURN IDENTIFIER
 
-functionSection
+/*functionSection
     : (NewLine* function)*
     ;
 
@@ -151,6 +246,11 @@ assignExpression
     | logicalOrExpression
     ;
 
+inlineConditionalExpression
+    ://todo
+    |logicalOrExpression
+    ;
+
 logicalOrExpression
     : logicalOrExpression Or logicalAndExpression{System.out.println("Operator : |");}
     | logicalAndExpression
@@ -204,7 +304,7 @@ valExpression
     : LPar expression RPar
     | literal
     | IDENTIFIER
-    ;
+    ;*/
 
 ReturnType
     :INT
@@ -230,7 +330,7 @@ FptrType
     : type
     | type Comma types
     ;*/
-Scope
+AccessModifier
     : PUBLIC | PRIVATE
     ;
 arg
@@ -330,7 +430,11 @@ Plus: '+';
 
 Minus: '-';
 
-Not: '~';
+EXCLAMATION_MARK: '!';
+
+PLUSPLUS: '++';
+
+MINUSMINUS: '--';
 
 Multiply: '*';
 
