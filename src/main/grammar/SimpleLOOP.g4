@@ -34,8 +34,8 @@ classScope
 */
 
 methodDeclaration
-    : accessModifier returnType IDENTIFIER LPar methodArguments? RPar methodBodyReturn //(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
-    | accessModifier VOID? IDENTIFIER LPar methodArguments? RPar LCURLYBRACE NEWLINE+ (statement NEWLINE+)* RCURLYBRACE //(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
+    : accessModifier returnType IDENTIFIER LPAR methodArguments? RPAR methodBodyReturn //(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
+    | accessModifier VOID? IDENTIFIER LPAR methodArguments? RPAR LCURLYBRACE NEWLINE+ (statement NEWLINE+)* RCURLYBRACE //(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
     ;
 
 methodBodyReturn
@@ -48,7 +48,7 @@ methodArguments
     ;
 
 methodArgument
-    : ArgumentType IDENTIFIER
+    : type IDENTIFIER
     ;
 
 declaration
@@ -61,7 +61,7 @@ assignment
 
 /*
 classDeclaration
-    : type r = IDENTIFIER{System.out.println("VarDec : " + $r.text);} LPar args RPar Begin NEWLINE+ Set{System.out.println("Setter");} mainStatementBlock NEWLINE+ Get{System.out.println("Getter");} mainStatementBlock NEWLINE+ End
+    : type r = IDENTIFIER{System.out.println("VarDec : " + $r.text);} LPAR args RPAR Begin NEWLINE+ Set{System.out.println("Setter");} mainStatementBlock NEWLINE+ Get{System.out.println("Getter");} mainStatementBlock NEWLINE+ End
     | declarationStatement
     ;
 */
@@ -106,8 +106,6 @@ expression:
     inlineConditionalExpression /*(op = ASSIGN expression )?*/
     ;
 
-//todo
-
 inlineConditionalExpression
     : orExpression inlineConditionalExpressionPrime
     ;
@@ -121,32 +119,26 @@ orExpression:
     andExpression (op = OR andExpression )*
     ;
 
-//todo
 andExpression:
     equalityExpression (op = AND equalityExpression )*
     ;
 
-//todo
 equalityExpression:
-    relationalExpression (op = EQUAL relationalExpression )*
+    relationalExpression (op = EQUALS relationalExpression )*
     ;
 
-//todo
 relationalExpression:
-    additiveExpression ((op = GREATER_THAN | op = LESS_THAN) additiveExpression )*
+    additiveExpression ((op = GT | op = LT) additiveExpression )*
     ;
 
-//todo
 additiveExpression:
     multiplicativeExpression ((op = PLUS | op = MINUS) multiplicativeExpression )*
     ;
 
-//todo
 multiplicativeExpression:
-    preUnaryExpression ((op = MULT | op = DIVIDE) preUnaryExpression )*
+    preUnaryExpression ((MULT | DIVIDE) preUnaryExpression )*
     ;
 
-//todo
 preUnaryExpression
     : postUnaryExpression
     | (MINUS | EXCLAMATION_MARK) preUnaryExpression
@@ -156,14 +148,12 @@ postUnaryExpression:
      accessExpression (PLUSPLUS|MINUSMINUS)?
     ;
 
-//todo
 accessExpression:
     otherExpression ((LPAR functionArguments RPAR) | (DOT IDENTIFIER))*  ((LBRACK expression RBRACK) | (DOT IDENTIFIER))*
     ;
 
-//todo
 otherExpression:
-    /*value | */IDENTIFIER | LPAR (functionArguments) RPAR/* | size | append*/
+    /*value | */literal | IDENTIFIER | LPAR (functionArguments) RPAR/* | size | append*/
     ;
 
 returnStatement
@@ -180,7 +170,7 @@ functionArguments
     ;
 
 function
-    : functionType r = IDENTIFIER{System.out.println("FunctionDec : " + $r.text);} LPar args RPar mainStatementBlock NewLine+
+    : functionType r = IDENTIFIER{System.out.println("FunctionDec : " + $r.text);} LPAR args RPAR mainStatementBlock NewLine+
     ;
 
 functionType
@@ -189,7 +179,7 @@ functionType
     ;
 
 mainFunction
-    : Main{System.out.println("Main");} LPar RPar mainStatementBlock NewLine*
+    : Main{System.out.println("Main");} LPAR RPAR mainStatementBlock NewLine*
     ;
 
 statementBlock
@@ -254,7 +244,7 @@ insideIfStatement
 
 expressionStatement
     : memberExpression Assign expression
-    | {System.out.println("FunctionCall");}memberExpression LPar params RPar
+    | {System.out.println("FunctionCall");}memberExpression LPAR params RPAR
     | specialExpression
     ;
 
@@ -319,7 +309,7 @@ unaryExpression
     ;
 
 memberExpression
-    : memberExpression LPar params RPar
+    : memberExpression LPAR params RPAR
     | memberExpression Dot (specialExpression | valExpression)
     | memberExpression LBrack expression RBrack
     | specialExpression
@@ -327,13 +317,13 @@ memberExpression
     ;
 
 specialExpression
-    : Display{System.out.println("Built-in : display");} LPar assignExpression RPar
-    | Append{System.out.println("Append");} LPar assignExpression Comma assignExpression RPar
-    | Size{System.out.println("Size");} LPar assignExpression RPar
+    : Display{System.out.println("Built-in : display");} LPAR assignExpression RPAR
+    | Append{System.out.println("Append");} LPAR assignExpression Comma assignExpression RPAR
+    | Size{System.out.println("Size");} LPAR assignExpression RPAR
     ;
 
 valExpression
-    : LPar expression RPar
+    : LPAR expression RPAR
     | literal
     | IDENTIFIER
     ;
@@ -396,7 +386,7 @@ literal
     ;
 //
 //setLiteral
-//    : LPar params RPar
+//    : LPAR params RPAR
 //    ;
 
 boolLiteral
@@ -424,25 +414,25 @@ VOID: 'void';
 PUBLIC: 'public';
 PRIVATE: 'private';
 
-Main: 'main';
+MAIN: 'main';
 
-While: 'while';
-Do: 'do';
-If: 'if';
-Else: 'else';
+WHILE: 'while';
+DO: 'do';
+IF: 'if';
+ELSE: 'else';
 
-Return: 'return';
+RETURN: 'return';
 
-Get: 'get';
-Set: 'set';
+GET: 'get';
+SET: 'set';
 
-Append: 'append';
-Display: 'display';
+APPEND: 'append';
+DISPLAY: 'display';
 
-Size: 'size';
+SIZE: 'size';
 
-LPar: '(';
-RPar: ')';
+LPAR: '(';
+RPAR: ')';
 
 LBRACK: '[';
 RBRACK: ']';
@@ -456,7 +446,7 @@ EQUALS: '==';
 
 ASSIGN: '=';
 
-Plus: '+';
+PLUS: '+';
 
 MINUS: '-';
 
@@ -470,13 +460,11 @@ PLUSPLUS: '++';
 
 MINUSMINUS: '--';
 
-Multiply: '*';
+MULT: '*';
 
-Division: '/';
+DIVIDE: '/';
 
-Dot: '.';
-
-Sharp: '#';
+DOT: '.';
 
 ARROW: '->';
 
@@ -484,9 +472,9 @@ LT: '<';
 
 GT: '>';
 
-And: '&';
+AND: '&&';
 
-Or: '|';
+OR: '||';
 
 IDENTIFIER: [a-zA-Z_] [a-zA-Z0-9_]*;
 
