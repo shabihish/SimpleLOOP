@@ -28,10 +28,19 @@ classStatement
 /*
 
 classScope
-    : (classStatement NEWLINE)*
+    : (classStatement NEWLINE+)*
     | LBRACK classStatement RBRACK
     ;
 */
+
+methodDeclaration
+    : accessModifier returnType IDENTIFIER LPar methodArguments? RPar methodBodyReturn //(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
+    | accessModifier VOID? IDENTIFIER LPar methodArguments? RPar LCURLYBRACE NEWLINE+ (statement NEWLINE+)* RCURLYBRACE //(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
+    ;
+
+methodBodyReturn
+    : LBRACK statement NEWLINE RETURN RBRACK // expression or assignment
+    ;
 
 methodArguments
     :methodArgument COMMA methodArguments
@@ -42,21 +51,12 @@ methodArgument
     : ArgumentType IDENTIFIER
     ;
 
-methodBodyReturn
-    :LBRACK statement NEWLINE RETURN RBRACK // expression or assignment
-    ;
-
-methodDeclaration
-    : accessModifier returnType IDENTIFIER LPar methodArguments? RPar methodBodyReturn//(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
-    | accessModifier VOID? IDENTIFIER LPar methodArguments? RPar LCURLYBRACE NEWLINE+ scope RCURLYBRACE//(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
-    ;
-
 declaration
     : type IDENTIFIER
     ;
 
 assignment
-    : type IDENTIFIER ASSIGN literal
+    : type IDENTIFIER ASSIGN expression
     ;
 
 /*
@@ -73,7 +73,7 @@ scope
     ;*/
 
 scope
-    : (statement NEWLINE+)+
+    : (statement NEWLINE+)*
     ;
 
 /*
@@ -103,14 +103,18 @@ statement
 // todo COPYED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //todo
 expression:
-    inlineConditionalExpression (op = ASSIGN expression )?
+    inlineConditionalExpression /*(op = ASSIGN expression )?*/
     ;
 
 //todo
 
 inlineConditionalExpression
-    : expression QUESTION_MARK expression
-    |orExpression
+    : orExpression inlineConditionalExpressionPrime
+    ;
+
+
+inlineConditionalExpressionPrime
+    : (QUESTION_MARK expression COLON expression inlineConditionalExpressionPrime)?
     ;
 
 orExpression:
@@ -143,8 +147,9 @@ multiplicativeExpression:
     ;
 
 //todo
-preUnaryExpression:
-    ((op = MINUS | op = EXCLAMATION_MARK) preUnaryExpression ) | postUnaryExpression
+preUnaryExpression
+    : postUnaryExpression
+    | (MINUS | EXCLAMATION_MARK) preUnaryExpression
     ;
 
 postUnaryExpression:
@@ -453,11 +458,13 @@ ASSIGN: '=';
 
 Plus: '+';
 
-Minus: '-';
+MINUS: '-';
 
 QUESTION_MARK: '?';
 
 EXCLAMATION_MARK: '!';
+
+COLON: ':';
 
 PLUSPLUS: '++';
 
