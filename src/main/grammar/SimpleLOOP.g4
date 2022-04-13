@@ -71,7 +71,8 @@ declaration
     ;
 
 assignment
-    : type IDENTIFIER ASSIGN expression
+    : (type)? IDENTIFIER ASSIGN expression
+
     ;
 
 /*
@@ -102,9 +103,45 @@ statement
     : expression
 //    | IfStatement
 //    | LoopStatement
+    | ifStatement
+    | elsifStatement
+    | elseStatement
     | assignment
     | declaration
     ;
+
+statementBlock
+    : LCURLYBRACE NEWLINE+ scope RCURLYBRACE
+    | NEWLINE+ statement NEWLINE*
+    ;
+
+ifStatementBlock
+    : LCURLYBRACE NEWLINE+ scope RCURLYBRACE
+    | NEWLINE* insideIfStatementBlock
+    ;
+
+insideIfStatementBlock
+    : elsifStatement
+    | elseStatement
+    | expression
+    ;
+
+ifStatement
+    : IF expression statementBlock
+    ;
+
+elseStatement
+    : IF expression ifStatementBlock NEWLINE+ ELSE statementBlock
+    ;
+
+elsifStatement
+    : IF expression ifStatementBlock NEWLINE* (ELSIF expression ifStatementBlock)* (NEWLINE+  ELSE statementBlock)?
+    ;
+
+
+
+
+
 
    // | Type? IDENTIFIER (Dot IDENTIFIER)? (Equals Expression)?
     /*
@@ -117,8 +154,9 @@ statement
     */
 // todo COPYED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //todo
-expression:
-    inlineConditionalExpression /*(op = ASSIGN expression )?*/
+expression
+    : LPAR expression RPAR
+    | inlineConditionalExpression /*(op = ASSIGN expression )?*/
     ;
 
 inlineConditionalExpression
@@ -435,6 +473,7 @@ WHILE: 'while';
 DO: 'do';
 IF: 'if';
 ELSE: 'else';
+ELSIF: 'elsif';
 
 RETURN: 'return';
 
