@@ -5,18 +5,17 @@ simpleLoop
     ;
 
 classDec
-    : CLASS CLASS_IDENTIFIER LCURLYBRACE NEWLINE+ classBody RCURLYBRACE
+    : CLASS CLASS_IDENTIFIER NEWLINE* LCURLYBRACE NEWLINE* classBody RCURLYBRACE
     | CLASS CLASS_IDENTIFIER LT IDENTIFIER LCURLYBRACE NEWLINE+ classBody RCURLYBRACE
     ;
 
 classBody
-    :(classStatement NEWLINE+)* (methodDeclaration NEWLINE+)*
+    :((classStatement NEWLINE+) | (methodDeclaration NEWLINE+))*
     ;
 
 classScope
     : LCURLYBRACE classStatement? RCURLYBRACE classScopeprime
     ;
-
 
 classScopeprime
     : (classStatement NEWLINE classScopeprime)?
@@ -27,21 +26,14 @@ classStatement
     | declaration
     | classScope
     ;
-/*
-
-classScope
-    : (classStatement NEWLINE+)*
-    | LBRACK classStatement RBRACK
-    ;
-*/
 
 methodDeclaration
     : accessModifier returnType IDENTIFIER LPAR methodParams? RPAR methodBodyReturn
-    | accessModifier VOID? IDENTIFIER LPAR methodParams? RPAR LCURLYBRACE NEWLINE+ scope RCURLYBRACE
+    | accessModifier VOID? IDENTIFIER LPAR methodParams? RPAR LCURLYBRACE NEWLINE* scope RCURLYBRACE
     ;
 
 methodBodyReturn
-    : LCURLYBRACE NEWLINE+ scope RETURN expression NEWLINE* RCURLYBRACE // expression or assignment
+    : LCURLYBRACE NEWLINE* scope RETURN expression NEWLINE* RCURLYBRACE // expression or assignment
     ;
 
 methodParams
@@ -66,29 +58,9 @@ assignment
     : type? IDENTIFIER ASSIGN expression
     ;
 
-/*
-classDeclaration
-    : type r = IDENTIFIER{System.out.println("VarDec : " + $r.text);} LPAR args RPAR Begin NEWLINE+ Set{System.out.println("Setter");} mainStatementBlock NEWLINE+ Get{System.out.println("Getter");} mainStatementBlock NEWLINE+ End
-    | declarationStatement
-    ;
-*/
-
-/*
 scope
-    : NEWLINE+ scopeBody
-    | LCURLYBRACE scope RCURLYBRACE
-    ;*/
-
-scope
-    : (statement NEWLINE+)*
+    : NEWLINE* (statement NEWLINE+)* NEWLINE*
     ;
-
-/*
-scopeBody
-    : (statement NEWLINE)*
-    | statement
-    ;
-*/
 
 statement
     : expression
@@ -127,15 +99,6 @@ insideIfStatementBlock
     | elsifStatement
     | elseStatement
     ;
-   // | Type? IDENTIFIER (Dot IDENTIFIER)? (Equals Expression)?
-    /*
-    x //
-    self.y //
-    x+x//
-    x = 4
-    int x //
-    int x =
-    */
 // todo COPYED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //todo
 expression
@@ -197,17 +160,10 @@ otherExpression:
 returnStatement
 //TODO: function or variable return
     : RETURN IDENTIFIER
-    |
     ;
 
-//functionArguments
-//    : IDENTIFIER
-//    | IDENTIFIER COMMA functionArguments
-//    | IDENTIFIER COMMA functionArguments
-//    ;
-
 loopStatement
-    : (range | IDENTIFIER) DOT EACH DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope NEWLINE+ RCURLYBRACE | NEWLINE+ statement NEWLINE+)
+    : (range | IDENTIFIER) DOT EACH DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope NEWLINE* RCURLYBRACE | NEWLINE+ statement NEWLINE*)
     ;
 
 range
