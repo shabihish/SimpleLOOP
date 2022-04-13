@@ -1,84 +1,96 @@
 grammar SimpleLOOP;
 
 simpleLoop
-    : ClassSection functionSection NewLine* mainFunction EOF
+    : NEWLINE* classDec NEWLINE* EOF
     ;
 
-ClassSection
-    : (NewLine* Class)*
+/*
+classSection
+    : (NEWLINE* class)*
+    ;
+*/
+
+classDec
+    : CLASS IDENTIFIER LCURLYBRACE NEWLINE+ classBody RCURLYBRACE
+    | CLASS IDENTIFIER LT IDENTIFIER LCURLYBRACE NEWLINE+ classBody RCURLYBRACE
     ;
 
-Class
-    : CLASS r = IDENTIFIER{System.out.print("CLASSDec : " + $r.text);} LCURLYBRACE NewLine+ ClassBody RCURLYBRACE
-    | CLASS r = IDENTIFIER{System.out.print("CLASSDec : " + $r.text);} LT IDENTIFIER LCURLYBRACE NewLine+ ClassBody RCURLYBRACE
+classBody
+    :(classStatement NEWLINE+)* (methodDeclaration NEWLINE+)*
     ;
 
-ClassBody
-    :ClassStatement
-    |ClassScope
-    |MethodDeclaration
+classStatement
+    : assignment
+    | declaration
+//    |
+//    | classScope
+    ;
+/*
+
+classScope
+    : (classStatement NEWLINE)*
+    | LBRACK classStatement RBRACK
+    ;
+*/
+
+methodArguments
+    :methodArgument COMMA methodArguments
+    |methodArgument
     ;
 
-MethodArguments
-    :MethodArgument Comma MethodArguments
-    |MethodArgument
-    ;
-
-MethodArgument
+methodArgument
     : ArgumentType IDENTIFIER
     ;
 
-
-
-MethodBodyReturn
-    :LBrack Statement NewLine RETURN RBrack // expression or assignment
+methodBodyReturn
+    :LBRACK statement NEWLINE RETURN RBRACK // expression or assignment
     ;
 
-MethodDeclaration
-    : AccessModifier ReturnType IDENTIFIER LPar MethodArguments? RPar MethodBodyReturn//(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
-    | AccessModifier IDENTIFIER LPar MethodArguments? RPar NewLine Scope//(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
+methodDeclaration
+    : accessModifier returnType IDENTIFIER LPar methodArguments? RPar methodBodyReturn//(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
+    | accessModifier VOID? IDENTIFIER LPar methodArguments? RPar LCURLYBRACE NEWLINE+ scope RCURLYBRACE//(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
     ;
 
-
-Expression
-    :ArithmetciExpr
-    |ComparisionExpr
-    |LogicalExpr
-    |ConditionalExpr
+declaration
+    : type IDENTIFIER
     ;
 
+assignment
+    : type IDENTIFIER ASSIGN literal
+    ;
 
-
-ClassDeclaration
-    : type r = IDENTIFIER{System.out.println("VarDec : " + $r.text);} LPar args RPar Begin NewLine+ Set{System.out.println("Setter");} mainStatementBlock NewLine+ Get{System.out.println("Getter");} mainStatementBlock NewLine+ End
+/*
+classDeclaration
+    : type r = IDENTIFIER{System.out.println("VarDec : " + $r.text);} LPar args RPar Begin NEWLINE+ Set{System.out.println("Setter");} mainStatementBlock NEWLINE+ Get{System.out.println("Getter");} mainStatementBlock NEWLINE+ End
     | declarationStatement
     ;
+*/
 
-Scope
-    : (Statement Newline)*
-    | LBrack Statement RBrack
+/*
+scope
+    : NEWLINE+ scopeBody
+    | LCURLYBRACE scope RCURLYBRACE
+    ;*/
 
+scope
+    : (statement NEWLINE+)+
     ;
 
-ClassScope
-    : (ClassStatement Newline)*
-    | LBrack ClassStatement RBrack
+/*
+scopeBody
+    : (statement NEWLINE)*
+    | statement
+    ;
+*/
+
+statement
+    : expression
+//    | IfStatement
+//    | LoopStatement
+    | assignment
+    | declaration
     ;
 
-Statement
-    : Expression
-    | IfStatement
-    | LoopStatement
-    | Scope
-    | Assignment
-    | Decleration
-    ;
-
-ClassStatement
-    : Assignment
-    | ClassScope
-    | Decleration
-    ;
    // | Type? IDENTIFIER (Dot IDENTIFIER)? (Equals Expression)?
     /*
     x //
@@ -91,41 +103,49 @@ ClassStatement
 // todo COPYED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //todo
 expression:
-    inlineConditionalExpression (op = ASSIGN expression )? ;
+    inlineConditionalExpression (op = ASSIGN expression )?
+    ;
 
 //todo
 
 inlineConditionalExpression
-    ://todo
+    : expression QUESTION_MARK expression
     |orExpression
     ;
 
 orExpression:
-    andExpression (op = OR andExpression )*;
+    andExpression (op = OR andExpression )*
+    ;
 
 //todo
 andExpression:
-    equalityExpression (op = AND equalityExpression )*;
+    equalityExpression (op = AND equalityExpression )*
+    ;
 
 //todo
 equalityExpression:
-    relationalExpression (op = EQUAL relationalExpression )*;
+    relationalExpression (op = EQUAL relationalExpression )*
+    ;
 
 //todo
 relationalExpression:
-    additiveExpression ((op = GREATER_THAN | op = LESS_THAN) additiveExpression )*;
+    additiveExpression ((op = GREATER_THAN | op = LESS_THAN) additiveExpression )*
+    ;
 
 //todo
 additiveExpression:
-    multiplicativeExpression ((op = PLUS | op = MINUS) multiplicativeExpression )*;
+    multiplicativeExpression ((op = PLUS | op = MINUS) multiplicativeExpression )*
+    ;
 
 //todo
 multiplicativeExpression:
-    preUnaryExpression ((op = MULT | op = DIVIDE) preUnaryExpression )*;
+    preUnaryExpression ((op = MULT | op = DIVIDE) preUnaryExpression )*
+    ;
 
 //todo
 preUnaryExpression:
-    ((op = MINUS | op = EXCLAMATION_MARK) preUnaryExpression ) | postUnaryExpression;
+    ((op = MINUS | op = EXCLAMATION_MARK) preUnaryExpression ) | postUnaryExpression
+    ;
 
 postUnaryExpression:
      accessExpression (PLUSPLUS|MINUSMINUS)?
@@ -133,16 +153,23 @@ postUnaryExpression:
 
 //todo
 accessExpression:
-    otherExpression ((LPAR functionArguments RPAR) | (DOT identifier))*  ((LBRACK expression RBRACK) | (DOT identifier))*;
+    otherExpression ((LPAR functionArguments RPAR) | (DOT IDENTIFIER))*  ((LBRACK expression RBRACK) | (DOT IDENTIFIER))*
+    ;
 
 //todo
 otherExpression:
-    value | identifier | LPAR (functionArguments) RPAR | size | append ;
+    /*value | */IDENTIFIER | LPAR (functionArguments) RPAR/* | size | append*/
+    ;
 
-ReturnStatement
+returnStatement
 //TODO: function or variable return
     :RETURN IDENTIFIER
+    ;
 
+functionArguments
+    : IDENTIFIER
+    | IDENTIFIER COMMA functionArguments
+    ;
 /*functionSection
     : (NewLine* function)*
     ;
@@ -304,131 +331,131 @@ valExpression
     : LPar expression RPar
     | literal
     | IDENTIFIER
-    ;*/
-
-ReturnType
-    :INT
-    |VOID
     ;
+    */
 
-Type
+type
     : INT
     | BOOL
     | IDENTIFIER
-    | ArrayType
-    | FptrType
+    | arrayType
+    | fptrType
     ;
 
-ArrayType
-    : (INT | BOOL | IDENTIFIER) LBrack INT RBrack
+
+returnType
+    : INT
+    | BOOL
+    | IDENTIFIER
+    | arrayType
+    | fptrType
     ;
 
-FptrType
+
+arrayType
+    : (INT | BOOL | IDENTIFIER) LBRACK INT RBRACK
+    ;
+
+fptrType
     : FPTR LT (INT | BOOL | VOID) ARROW (INT | BOOL | VOID) GT IDENTIFIER
     ;
 /*types
     : type
     | type Comma types
     ;*/
-AccessModifier
+accessModifier
     : PUBLIC | PRIVATE
     ;
+/*
+
 arg
     : type r = IDENTIFIER{System.out.println("ArgumentDec : " + $r.text);}
     ;
 
 args
-    : arg (Comma arg)*
+    : arg (COMMA arg)*
     |
     ;
 
 params
-    : assignExpression (Comma assignExpression)*
+    : assignExpression (COMMA assignExpression)*
     |
     ;
+*/
 
+// TODO: Add array literal types
 literal
-    : IntLiteral
+    : INT_LITERAL
     | boolLiteral
-    | setLiteral
+//    | setLiteral
     ;
-
-setLiteral
-    : LPar params RPar
-    ;
+//
+//setLiteral
+//    : LPar params RPar
+//    ;
 
 boolLiteral
-    : True
-    | False
+    : TRUE
+    | FALSE
     ;
 
-IntLiteral: [1-9] [0-9]* | [0];
+INT_LITERAL
+    : [1-9] [0-9]*
+    | [0]
+    ;
+
 
 // KeyWords
 CLASS: 'class';
 
-Begin: 'begin';
-
-End: 'end';
-
 INT: 'int';
-
 BOOL: 'bool';
+FPTR: 'fptr';
 
-True: 'true';
-
-False: 'false';
+TRUE: 'true';
+FALSE: 'false';
+VOID: 'void';
 
 PUBLIC: 'public';
-
 PRIVATE: 'private';
-
-
-FPTR: 'fptr';
 
 Main: 'main';
 
-VOID: 'void';
-
 While: 'while';
-
 Do: 'do';
-
 If: 'if';
-
 Else: 'else';
 
 Return: 'return';
 
 Get: 'get';
-
 Set: 'set';
 
 Append: 'append';
-
 Display: 'display';
 
 Size: 'size';
 
-SemiCollon: ';';
-
 LPar: '(';
-
 RPar: ')';
 
-LBrack: '[';
+LBRACK: '[';
+RBRACK: ']';
 
-RBrack: ']';
+LCURLYBRACE: '{';
+RCURLYBRACE: '}';
 
-Comma: ',';
+COMMA: ',';
 
-Equals: '==';
+EQUALS: '==';
 
-Assign: '=';
+ASSIGN: '=';
 
 Plus: '+';
 
 Minus: '-';
+
+QUESTION_MARK: '?';
 
 EXCLAMATION_MARK: '!';
 
@@ -456,12 +483,9 @@ Or: '|';
 
 IDENTIFIER: [a-zA-Z_] [a-zA-Z0-9_]*;
 
-NewLine: [\n\r];
+NEWLINE: [\n\r];
 
 Comment: '/*' .*? '*/' -> skip;
 
-WS: [ \t] -> skip;
+WS: [ \t;\n] -> skip;
 
-RCURLYBRACE: '{';
-
-LCURLYBRACE: '}';

@@ -1,6 +1,6 @@
 # Intelij files
 .idea
-CA1.iml
+*.iml
 
 #Internal files
 out
