@@ -63,7 +63,12 @@ declaration
     ;
 
 assignment
+<<<<<<< HEAD
     : type? IDENTIFIER ASSIGN expression
+=======
+    : (type)? IDENTIFIER ASSIGN expression
+
+>>>>>>> 3b3d5cd5136ce90a901b73b8a47f40dde8e455a7
     ;
 
 /*
@@ -92,10 +97,42 @@ scopeBody
 
 statement
     : expression
-//    | IfStatement
+    | ifStatement
+    | elsifStatement
+    | elseStatement
+
     | loopStatement
+
     | assignment
     | declaration
+    ;
+
+statementBlock
+    : LCURLYBRACE NEWLINE+ scope RCURLYBRACE
+    | NEWLINE+ statement NEWLINE*
+    ;
+
+ifStatementBlock
+    : LCURLYBRACE NEWLINE+ scope RCURLYBRACE
+    | NEWLINE* insideIfStatementBlock
+    ;
+
+insideIfStatementBlock
+    : elsifStatement
+    | elseStatement
+    | expression
+    ;
+
+ifStatement
+    : IF expression statementBlock
+    ;
+
+elseStatement
+    : IF expression ifStatementBlock NEWLINE+ ELSE statementBlock
+    ;
+
+elsifStatement
+    : IF expression ifStatementBlock NEWLINE* (ELSEIF expression ifStatementBlock)* (NEWLINE+  ELSE statementBlock)?
     ;
 
    // | Type? IDENTIFIER (Dot IDENTIFIER)? (Equals Expression)?
@@ -109,8 +146,9 @@ statement
     */
 // todo COPYED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //todo
-expression:
-    inlineConditionalExpression /*(op = ASSIGN expression )?*/
+expression
+    : LPAR expression RPAR
+    | inlineConditionalExpression /*(op = ASSIGN expression )?*/
     ;
 
 inlineConditionalExpression
@@ -154,7 +192,12 @@ postUnaryExpression:
      accessExpression (PLUSPLUS|MINUSMINUS)?
     ;
 
+<<<<<<< HEAD
 // TODO: Enfocre .new() to be called on CLASS_IDENTIFIERS
+=======
+
+
+>>>>>>> 3b3d5cd5136ce90a901b73b8a47f40dde8e455a7
 accessExpression:
     otherExpression ((LPAR methodArgs? RPAR) | (DOT NEW) | (DOT DELETE) | (DOT NEW) | (DOT IDENTIFIER))*
                  ((LBRACK expression RBRACK) | (DOT NEW) | (DOT DELETE) | (DOT NEW) | (DOT IDENTIFIER))*
@@ -183,6 +226,7 @@ loopStatement
 range
     : LPAR INT_LITERAL DOT DOT INT_LITERAL RPAR
     ;
+
 /*functionSection
     : (NewLine* function)*
     ;
