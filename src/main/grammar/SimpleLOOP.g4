@@ -4,15 +4,9 @@ simpleLoop
     : NEWLINE* classDec NEWLINE* EOF
     ;
 
-/*
-classSection
-    : (NEWLINE* class)*
-    ;
-*/
-
 classDec
-    : CLASS IDENTIFIER LCURLYBRACE NEWLINE+ classBody RCURLYBRACE
-    | CLASS IDENTIFIER LT IDENTIFIER LCURLYBRACE NEWLINE+ classBody RCURLYBRACE
+    : CLASS CLASS_IDENTIFIER LCURLYBRACE NEWLINE+ classBody RCURLYBRACE
+    | CLASS CLASS_IDENTIFIER LT IDENTIFIER LCURLYBRACE NEWLINE+ classBody RCURLYBRACE
     ;
 
 classBody
@@ -42,21 +36,26 @@ classScope
 */
 
 methodDeclaration
-    : accessModifier returnType IDENTIFIER LPAR methodArguments? RPAR methodBodyReturn
-    | accessModifier VOID? IDENTIFIER LPAR methodArguments? RPAR LCURLYBRACE NEWLINE+ scope RCURLYBRACE
+    : accessModifier returnType IDENTIFIER LPAR methodParams? RPAR methodBodyReturn
+    | accessModifier VOID? IDENTIFIER LPAR methodParams? RPAR LCURLYBRACE NEWLINE+ scope RCURLYBRACE
     ;
 
 methodBodyReturn
     : LCURLYBRACE NEWLINE+ scope RETURN expression NEWLINE* RCURLYBRACE // expression or assignment
     ;
 
-methodArguments
-    :methodArgument COMMA methodArguments
-    |methodArgument
+methodParams
+    :methodParam COMMA methodParams
+    |methodParam
     ;
 
-methodArgument
+methodParam
     : type IDENTIFIER
+    ;
+
+methodArgs
+    : IDENTIFIER COMMA methodArgs
+    | IDENTIFIER
     ;
 
 declaration
@@ -64,7 +63,7 @@ declaration
     ;
 
 assignment
-    : type IDENTIFIER ASSIGN expression
+    : type? IDENTIFIER ASSIGN expression
     ;
 
 /*
@@ -118,7 +117,6 @@ inlineConditionalExpression
     : orExpression inlineConditionalExpressionPrime
     ;
 
-
 inlineConditionalExpressionPrime
     : (QUESTION_MARK expression COLON expression inlineConditionalExpressionPrime)?
     ;
@@ -156,12 +154,14 @@ postUnaryExpression:
      accessExpression (PLUSPLUS|MINUSMINUS)?
     ;
 
+// TODO: Enfocre .new() to be called on CLASS_IDENTIFIERS
 accessExpression:
-    otherExpression ((LPAR functionArguments RPAR) | (DOT IDENTIFIER))*  ((LBRACK expression RBRACK) | (DOT IDENTIFIER))*
+    otherExpression ((LPAR methodArgs? RPAR) | (DOT NEW) | (DOT DELETE) | (DOT NEW) | (DOT IDENTIFIER))*
+                 ((LBRACK expression RBRACK) | (DOT NEW) | (DOT DELETE) | (DOT NEW) | (DOT IDENTIFIER))*
     ;
 
 otherExpression:
-    /*value | */literal | IDENTIFIER | LPAR (functionArguments) RPAR/* | size | append*/
+    /*value | */literal | SET | IDENTIFIER | LPAR (methodArgs?) RPAR/* | size | append*/
     ;
 
 returnStatement
@@ -170,11 +170,11 @@ returnStatement
     |
     ;
 
-functionArguments
-    : IDENTIFIER
-    | IDENTIFIER COMMA functionArguments
-    | IDENTIFIER COMMA functionArguments
-    ;
+//functionArguments
+//    : IDENTIFIER
+//    | IDENTIFIER COMMA functionArguments
+//    | IDENTIFIER COMMA functionArguments
+//    ;
 
 loopStatement
     : (range | IDENTIFIER) DOT EACH DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope NEWLINE+ RCURLYBRACE | NEWLINE+ statement NEWLINE+)
@@ -350,9 +350,10 @@ valExpression
 type
     : INT
     | BOOL
-    | IDENTIFIER
+    | CLASS_IDENTIFIER
     | arrayType
     | fptrType
+    | SET LT type GT
     ;
 
 
@@ -424,6 +425,7 @@ CLASS: 'class';
 INT: 'int';
 BOOL: 'bool';
 FPTR: 'fptr';
+SET: 'Set';
 
 TRUE: 'true';
 FALSE: 'false';
@@ -433,17 +435,25 @@ PUBLIC: 'public';
 PRIVATE: 'private';
 
 MAIN: 'main';
+SELF: 'self';
+
+INITIALIZE: 'initialize';
+NEW: 'new';
+DELETE: 'delete';
+INCLUDE: 'include';
 
 EACH: 'each';
 DO: 'do';
 
 IF: 'if';
 ELSE: 'else';
+ELSEIF: 'elseif';
 
 RETURN: 'return';
 
-GET: 'get';
-SET: 'set';
+PRINT: 'print';
+ADD: 'add';
+MERGE: 'merge';
 
 APPEND: 'append';
 DISPLAY: 'display';
@@ -499,7 +509,10 @@ AND: '&&';
 
 OR: '||';
 
-IDENTIFIER: [a-zA-Z_] [a-zA-Z0-9_]*;
+NULL: 'null';
+
+IDENTIFIER: [a-z_] [a-zA-Z0-9_]*;
+CLASS_IDENTIFIER: [A-Z] [a-zA-Z0-9_]*;
 
 NEWLINE: [\n\r];
 
