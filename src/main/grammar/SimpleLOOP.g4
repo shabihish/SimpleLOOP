@@ -1,12 +1,16 @@
 grammar SimpleLOOP;
 
 simpleLoop
-    : NEWLINE* classDec NEWLINE* EOF
+    : NEWLINE* (classDec NEWLINE*)* mainClassDec NEWLINE* (classDec NEWLINE*)* EOF
+    ;
+
+mainClassDec
+    : CLASS NEWLINE* MAIN NEWLINE* LCURLYBRACE NEWLINE* classBody NEWLINE* RCURLYBRACE
     ;
 
 classDec
-    : CLASS CLASS_IDENTIFIER NEWLINE* LCURLYBRACE NEWLINE* classBody RCURLYBRACE
-    | CLASS CLASS_IDENTIFIER LT IDENTIFIER LCURLYBRACE NEWLINE+ classBody RCURLYBRACE
+    : CLASS NEWLINE* CLASS_IDENTIFIER NEWLINE* LCURLYBRACE NEWLINE* classBody NEWLINE* RCURLYBRACE
+    | CLASS NEWLINE* CLASS_IDENTIFIER LT IDENTIFIER LCURLYBRACE NEWLINE+ classBody RCURLYBRACE
     ;
 
 classBody
@@ -28,13 +32,15 @@ classStatement
     ;
 
 methodDeclaration
-    : accessModifier returnType IDENTIFIER LPAR methodParams? RPAR methodBodyReturn
-    | accessModifier VOID? IDENTIFIER LPAR methodParams? RPAR LCURLYBRACE NEWLINE* scope RCURLYBRACE
+//    : accessModifier returnType IDENTIFIER LPAR methodParams? RPAR methodBodyReturn
+    : accessModifier (VOID? | type) IDENTIFIER LPAR methodParams? RPAR LCURLYBRACE NEWLINE* scope RCURLYBRACE
     ;
 
+/*
 methodBodyReturn
     : LCURLYBRACE NEWLINE* scope RETURN expression NEWLINE* RCURLYBRACE // expression or assignment
     ;
+*/
 
 methodParams
     :methodParam COMMA methodParams
@@ -63,14 +69,33 @@ scope
     ;
 
 statement
-    : expression
-    | assignment
+//    : expression
+    : assignment
+    | methodCallStatement
     | ifStatement
     | elsifStatement
     | elseStatement
     | loopStatement
     | declaration
+    | returnStatement
     ;
+
+returnStatement
+//TODO: function or variable return
+    : RETURN expression
+    | RETURN
+    ;
+methodCallStatement
+    : IDENTIFIER LPAR methodArgs? RPAR
+    ;
+loopStatement
+    : (range | IDENTIFIER) DOT EACH DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope NEWLINE* RCURLYBRACE | NEWLINE+ statement NEWLINE*)
+    ;
+
+range
+    : LPAR INT_LITERAL DOT DOT INT_LITERAL RPAR
+    ;
+
 
 statementBlock
     : NEWLINE* LCURLYBRACE NEWLINE* scope RCURLYBRACE
@@ -156,20 +181,6 @@ accessExpression:
 otherExpression:
     /*value | */literal | SET | IDENTIFIER | LPAR (methodArgs?) RPAR/* | size | append*/
     ;
-
-returnStatement
-//TODO: function or variable return
-    : RETURN IDENTIFIER
-    ;
-
-loopStatement
-    : (range | IDENTIFIER) DOT EACH DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope NEWLINE* RCURLYBRACE | NEWLINE+ statement NEWLINE*)
-    ;
-
-range
-    : LPAR INT_LITERAL DOT DOT INT_LITERAL RPAR
-    ;
-
 /*functionSection
     : (NewLine* function)*
     ;
@@ -335,35 +346,22 @@ valExpression
     */
 
 type
-    : INT
+    : arrayType
+    | INT
     | BOOL
     | CLASS_IDENTIFIER
-    | arrayType
     | fptrType
     | SET LT type GT
     ;
 
-
-returnType
-    : INT
-    | BOOL
-    | IDENTIFIER
-    | arrayType
-    | fptrType
-    ;
-
-
 arrayType
-    : (INT | BOOL | IDENTIFIER) LBRACK INT RBRACK
+    : (INT | BOOL | CLASS_IDENTIFIER) (LBRACK INT_LITERAL RBRACK)+
     ;
 
 fptrType
-    : FPTR LT (INT | BOOL | VOID) ARROW (INT | BOOL | VOID) GT IDENTIFIER
+    : FPTR LT (type | VOID) ARROW (type | VOID) GT
     ;
-/*types
-    : type
-    | type Comma types
-    ;*/
+
 accessModifier
     : PUBLIC | PRIVATE
     ;
@@ -421,7 +419,7 @@ VOID: 'void';
 PUBLIC: 'public';
 PRIVATE: 'private';
 
-MAIN: 'main';
+MAIN: 'Main';
 SELF: 'self';
 
 INITIALIZE: 'initialize';
