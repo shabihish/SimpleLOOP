@@ -50,11 +50,11 @@ classScope
 
 methodDeclaration
     : accessModifier returnType IDENTIFIER LPAR methodArguments? RPAR methodBodyReturn //(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
-    | accessModifier VOID? IDENTIFIER LPAR methodArguments? RPAR LCURLYBRACE NEWLINE+ (statement NEWLINE+)* RCURLYBRACE //(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
+    | accessModifier VOID? IDENTIFIER LPAR methodArguments? RPAR LCURLYBRACE NEWLINE+ scope RCURLYBRACE //(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
     ;
 
 methodBodyReturn
-    : LBRACK statement NEWLINE RETURN RBRACK // expression or assignment
+    : LCURLYBRACE NEWLINE+ scope RETURN expression NEWLINE* RCURLYBRACE // expression or assignment
     ;
 
 methodArguments

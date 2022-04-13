@@ -4,7 +4,7 @@
 
 #Internal files
 out
-sample.txt
+*.txt
 gen
 
 # Compiled class file
