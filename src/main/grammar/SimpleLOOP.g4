@@ -92,34 +92,26 @@ scopeBody
 
 statement
     : expression
+    | assignment
     | ifStatement
     | elsifStatement
     | elseStatement
-
     | loopStatement
-
-    | assignment
     | declaration
     ;
 
 statementBlock
-    : LCURLYBRACE NEWLINE+ scope RCURLYBRACE
-    | NEWLINE+ statement NEWLINE*
-    ;
-
-ifStatementBlock
-    : LCURLYBRACE NEWLINE+ scope RCURLYBRACE
-    | NEWLINE* insideIfStatementBlock
-    ;
-
-insideIfStatementBlock
-    : elsifStatement
-    | elseStatement
-    | expression
+    : NEWLINE* LCURLYBRACE NEWLINE* scope RCURLYBRACE
+    | NEWLINE* statement
     ;
 
 ifStatement
     : IF expression statementBlock
+    ;
+
+ifStatementBlock
+    : LCURLYBRACE NEWLINE* scope RCURLYBRACE
+    | NEWLINE* insideIfStatementBlock
     ;
 
 elseStatement
@@ -127,9 +119,14 @@ elseStatement
     ;
 
 elsifStatement
-    : IF expression ifStatementBlock NEWLINE* (ELSEIF expression ifStatementBlock)* (NEWLINE+  ELSE statementBlock)?
+    : IF expression ifStatementBlock NEWLINE+ (NEWLINE* ELSIF expression statementBlock)+ (NEWLINE+  ELSE statementBlock)?
     ;
-
+insideIfStatementBlock
+    : expression
+    | assignment
+    | elsifStatement
+    | elseStatement
+    ;
    // | Type? IDENTIFIER (Dot IDENTIFIER)? (Equals Expression)?
     /*
     x //
@@ -481,7 +478,7 @@ DO: 'do';
 
 IF: 'if';
 ELSE: 'else';
-ELSEIF: 'elseif';
+ELSIF: 'elsif';
 
 RETURN: 'return';
 
