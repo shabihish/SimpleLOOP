@@ -23,7 +23,22 @@ classStatement
     : assignment
     | declaration
 //    |
+
 //    | classScope
+
+    | classScope
+
+    ;
+
+
+classScope
+    : LBRACK classStatement RBRACK classScopeprime
+    ;
+
+
+classScopeprime
+    : classStatement NEWLINE classScopeprime
+    |()?
     ;
 /*
 
@@ -462,7 +477,9 @@ MINUSMINUS: '--';
 
 MULT: '*';
 
+
 DIVIDE: '/';
+
 
 DOT: '.';
 
