@@ -63,12 +63,7 @@ declaration
     ;
 
 assignment
-<<<<<<< HEAD
     : type? IDENTIFIER ASSIGN expression
-=======
-    : (type)? IDENTIFIER ASSIGN expression
-
->>>>>>> 3b3d5cd5136ce90a901b73b8a47f40dde8e455a7
     ;
 
 /*
@@ -192,12 +187,7 @@ postUnaryExpression:
      accessExpression (PLUSPLUS|MINUSMINUS)?
     ;
 
-<<<<<<< HEAD
 // TODO: Enfocre .new() to be called on CLASS_IDENTIFIERS
-=======
-
-
->>>>>>> 3b3d5cd5136ce90a901b73b8a47f40dde8e455a7
 accessExpression:
     otherExpression ((LPAR methodArgs? RPAR) | (DOT NEW) | (DOT DELETE) | (DOT NEW) | (DOT IDENTIFIER))*
                  ((LBRACK expression RBRACK) | (DOT NEW) | (DOT DELETE) | (DOT NEW) | (DOT IDENTIFIER))*
