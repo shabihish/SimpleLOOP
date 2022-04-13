@@ -94,7 +94,7 @@ scopeBody
 statement
     : expression
 //    | IfStatement
-//    | LoopStatement
+    | loopStatement
     | assignment
     | declaration
     ;
@@ -166,12 +166,22 @@ otherExpression:
 
 returnStatement
 //TODO: function or variable return
-    :RETURN IDENTIFIER
+    : RETURN IDENTIFIER
+    |
     ;
 
 functionArguments
     : IDENTIFIER
     | IDENTIFIER COMMA functionArguments
+    | IDENTIFIER COMMA functionArguments
+    ;
+
+loopStatement
+    : (range | IDENTIFIER) DOT EACH DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope NEWLINE+ RCURLYBRACE | NEWLINE+ statement NEWLINE+)
+    ;
+
+range
+    : LPAR INT_LITERAL DOT DOT INT_LITERAL RPAR
     ;
 /*functionSection
     : (NewLine* function)*
@@ -424,8 +434,9 @@ PRIVATE: 'private';
 
 MAIN: 'main';
 
-WHILE: 'while';
+EACH: 'each';
 DO: 'do';
+
 IF: 'if';
 ELSE: 'else';
 
@@ -470,6 +481,7 @@ MINUSMINUS: '--';
 
 MULT: '*';
 
+STRAIGHT_SLASH: '|';
 
 DIVIDE: '/';
 
