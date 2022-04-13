@@ -19,26 +19,19 @@ classBody
     :(classStatement NEWLINE+)* (methodDeclaration NEWLINE+)*
     ;
 
-classStatement
-    : assignment
-    | declaration
-//    |
-
-//    | classScope
-
-    | classScope
-
-    ;
-
-
 classScope
-    : LBRACK classStatement RBRACK classScopeprime
+    : LCURLYBRACE classStatement? RCURLYBRACE classScopeprime
     ;
 
 
 classScopeprime
-    : classStatement NEWLINE classScopeprime
-    |()?
+    : (classStatement NEWLINE classScopeprime)?
+    ;
+
+classStatement
+    : assignment
+    | declaration
+    | classScope
     ;
 /*
 
@@ -49,8 +42,8 @@ classScope
 */
 
 methodDeclaration
-    : accessModifier returnType IDENTIFIER LPAR methodArguments? RPAR methodBodyReturn //(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
-    | accessModifier VOID? IDENTIFIER LPAR methodArguments? RPAR LCURLYBRACE NEWLINE+ scope RCURLYBRACE //(ClassDeclaration (SemiCollon ClassDeclaration)* SemiCollon? NewLine+)+
+    : accessModifier returnType IDENTIFIER LPAR methodArguments? RPAR methodBodyReturn
+    | accessModifier VOID? IDENTIFIER LPAR methodArguments? RPAR LCURLYBRACE NEWLINE+ scope RCURLYBRACE
     ;
 
 methodBodyReturn
@@ -101,11 +94,12 @@ scopeBody
 
 statement
     : expression
-//    | IfStatement
-//    | LoopStatement
     | ifStatement
     | elsifStatement
     | elseStatement
+
+    | loopStatement
+
     | assignment
     | declaration
     ;
@@ -201,6 +195,8 @@ postUnaryExpression:
      accessExpression (PLUSPLUS|MINUSMINUS)?
     ;
 
+
+
 accessExpression:
     otherExpression ((LPAR functionArguments RPAR) | (DOT IDENTIFIER))*  ((LBRACK expression RBRACK) | (DOT IDENTIFIER))*
     ;
@@ -211,12 +207,22 @@ otherExpression:
 
 returnStatement
 //TODO: function or variable return
-    :RETURN IDENTIFIER
+    : RETURN IDENTIFIER
+    |
     ;
 
 functionArguments
     : IDENTIFIER
     | IDENTIFIER COMMA functionArguments
+    | IDENTIFIER COMMA functionArguments
+    ;
+
+loopStatement
+    : (range | IDENTIFIER) DOT EACH DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope NEWLINE+ RCURLYBRACE | NEWLINE+ statement NEWLINE+)
+    ;
+
+range
+    : LPAR INT_LITERAL DOT DOT INT_LITERAL RPAR
     ;
 /*functionSection
     : (NewLine* function)*
@@ -469,8 +475,9 @@ PRIVATE: 'private';
 
 MAIN: 'main';
 
-WHILE: 'while';
+EACH: 'each';
 DO: 'do';
+
 IF: 'if';
 ELSE: 'else';
 ELSIF: 'elsif';
@@ -516,9 +523,11 @@ MINUSMINUS: '--';
 
 MULT: '*';
 
+STRAIGHT_SLASH: '|';
 
 DIVIDE: '/';
 
+SHARP: '#';
 
 DOT: '.';
 
@@ -536,7 +545,8 @@ IDENTIFIER: [a-zA-Z_] [a-zA-Z0-9_]*;
 
 NEWLINE: [\n\r];
 
-Comment: '/*' .*? '*/' -> skip;
+SCOPE_COMMENT: '=begin\n' .*? '\n=end' -> skip;
+INLINE_COMMENT: '#' .*? '\n' -> skip;
 
 WS: [ \t;\n] -> skip;
 
