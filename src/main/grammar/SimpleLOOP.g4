@@ -10,11 +10,11 @@ mainClassDec
 
 classDec
     : CLASS NEWLINE* CLASS_IDENTIFIER NEWLINE* LCURLYBRACE NEWLINE* classBody NEWLINE* RCURLYBRACE
-    | CLASS NEWLINE* CLASS_IDENTIFIER LT IDENTIFIER LCURLYBRACE NEWLINE+ classBody RCURLYBRACE
+    | CLASS NEWLINE* CLASS_IDENTIFIER LT CLASS_IDENTIFIER LCURLYBRACE NEWLINE+ classBody RCURLYBRACE
     ;
 
 classBody
-    :((classStatement NEWLINE+) | (methodDeclaration NEWLINE+))*
+    : (classStatement NEWLINE+)* (methodDeclaration NEWLINE+)* (initializeMethodDeclaration NEWLINE+) ((methodDeclaration NEWLINE+))*
     ;
 
 classScope
@@ -32,8 +32,15 @@ classStatement
     ;
 
 methodDeclaration
-//    : accessModifier returnType IDENTIFIER LPAR methodParams? RPAR methodBodyReturn
     : accessModifier (VOID? | type) IDENTIFIER LPAR methodParams? RPAR LCURLYBRACE NEWLINE* scope RCURLYBRACE
+    ;
+
+initializeMethodDeclaration
+    : accessModifier INITIALIZE LPAR methodParams? RPAR LCURLYBRACE NEWLINE* scope RCURLYBRACE
+    ;
+
+mainInitializeMethodDeclaration
+    : accessModifier INITIALIZE LPAR RPAR LCURLYBRACE NEWLINE* scope RCURLYBRACE
     ;
 
 /*
@@ -57,8 +64,8 @@ methodArgs
     ;
 
 newSetArgs
-    : INT_LITERAL COMMA newSetArgs
-    | INT_LITERAL
+    : signedIntLiteral COMMA newSetArgs
+    | signedIntLiteral
     ;
 
 
@@ -95,13 +102,13 @@ methodCallStatement
     : IDENTIFIER LPAR methodArgs? RPAR
     ;
 loopStatement
-    : (range | IDENTIFIER) DOT EACH DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope NEWLINE* RCURLYBRACE | NEWLINE+ statement NEWLINE*)
+    : (expression | range | IDENTIFIER) DOT EACH DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope NEWLINE* RCURLYBRACE | NEWLINE+ statement NEWLINE*)
     ;
 
+// TODO: Check whether the usage of negative int's is correct
 range
-    : LPAR INT_LITERAL DOT DOT INT_LITERAL RPAR
+    : LPAR signedIntLiteral DOT DOT signedIntLiteral RPAR
     ;
-
 
 statementBlock
     : NEWLINE* LCURLYBRACE NEWLINE* scope RCURLYBRACE
@@ -175,12 +182,12 @@ preUnaryExpression
     ;
 
 postUnaryExpression:
-     (setExpression | newClassExpression | accessExpression) (PLUSPLUS|MINUSMINUS)?
+     (setExpression | newClassExpression | accessExpression)(PLUSPLUS|MINUSMINUS)?
     ;
 
 setExpression
         : SET (DOT NEW LPAR (newSetArgs? | LPAR newSetArgs RPAR) RPAR)
-        | IDENTIFIER (DOT (ADD | INCLUDE | DELETE) LPAR INT_LITERAL RPAR | DOT MERGE LPAR (setExpression | IDENTIFIER) RPAR )
+        | IDENTIFIER DOT ((ADD | INCLUDE | DELETE) LPAR signedIntLiteral RPAR| MERGE LPAR (setExpression | IDENTIFIER) RPAR )
         ;
 
 newClassExpression
@@ -372,7 +379,7 @@ type
     ;
 
 arrayType
-    : (INT | BOOL | CLASS_IDENTIFIER) (LBRACK INT_LITERAL RBRACK)+
+    : (INT | BOOL | CLASS_IDENTIFIER) (LBRACK POSITIVE_INT_LITERAL RBRACK)+
     ;
 
 fptrType
@@ -400,9 +407,11 @@ params
 */
 
 // TODO: Add array literal types
+// TODO: Is Null valid as value?
 literal
-    : INT_LITERAL
+    : signedIntLiteral
     | boolLiteral
+    | NULL
 //    | setLiteral
     ;
 //
@@ -414,8 +423,12 @@ boolLiteral
     : TRUE
     | FALSE
     ;
+signedIntLiteral
+    : (PLUS | MINUS)? POSITIVE_INT_LITERAL
+    ;
 
-INT_LITERAL
+// TODO: What about negtive values?
+POSITIVE_INT_LITERAL
     : [1-9] [0-9]*
     | [0]
     ;
@@ -518,8 +531,9 @@ CLASS_IDENTIFIER: [A-Z] [a-zA-Z0-9_]*;
 
 NEWLINE: [\n\r];
 
+WS: [ \t;\n] -> skip;
+
 SCOPE_COMMENT: '=begin\n' .*? '\n=end' -> skip;
 INLINE_COMMENT: '#' .*? '\n' -> skip;
 
-WS: [ \t;\n] -> skip;
 
