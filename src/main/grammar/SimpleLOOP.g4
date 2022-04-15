@@ -56,6 +56,12 @@ methodArgs
     | IDENTIFIER
     ;
 
+newSetArgs
+    : INT_LITERAL COMMA newSetArgs
+    | INT_LITERAL
+    ;
+
+
 declaration
     : type IDENTIFIER
     ;
@@ -169,18 +175,29 @@ preUnaryExpression
     ;
 
 postUnaryExpression:
-     accessExpression (PLUSPLUS|MINUSMINUS)?
+     (setExpression | newClassExpression | accessExpression) (PLUSPLUS|MINUSMINUS)?
     ;
 
-// TODO: Enfocre .new() to be called on CLASS_IDENTIFIERS
+setExpression
+        : SET (DOT NEW LPAR (newSetArgs? | LPAR newSetArgs RPAR) RPAR)
+        | IDENTIFIER (DOT (ADD | INCLUDE | DELETE) LPAR INT_LITERAL RPAR | DOT MERGE LPAR (setExpression | IDENTIFIER) RPAR )
+        ;
+
+newClassExpression
+        : CLASS_IDENTIFIER DOT NEW LPAR methodArgs? RPAR
+        ;
+
+// TODO: Must also have "(LPAR methodArgs? RPAR)" in the second line
 accessExpression:
-    otherExpression ((LPAR methodArgs? RPAR) | (DOT NEW) | (DOT DELETE) | (DOT NEW) | (DOT IDENTIFIER))*
-                 ((LBRACK expression RBRACK) | (DOT NEW) | (DOT DELETE) | (DOT NEW) | (DOT IDENTIFIER))*
+    otherExpression ((LPAR methodArgs? RPAR) | (DOT IDENTIFIER))*
+                 ((LBRACK expression RBRACK) | (DOT IDENTIFIER))*
     ;
 
+//TODO: Is "LPAR (methodArgs?) RPAR" RHS needed?
 otherExpression:
-    /*value | */literal | SET | IDENTIFIER | LPAR (methodArgs?) RPAR/* | size | append*/
+    /*value | */literal | IDENTIFIER | LPAR (methodArgs?) RPAR/* | size | append*/
     ;
+
 /*functionSection
     : (NewLine* function)*
     ;
