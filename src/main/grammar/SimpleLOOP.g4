@@ -22,12 +22,14 @@ mainClassDec
     ;
 
 classDec
+
     : CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} NEWLINE* LCURLYBRACE NEWLINE+ classBody NEWLINE* RCURLYBRACE
     | CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} LT pid=CLASS_IDENTIFIER {System.out.println("Inheritance : " + $id.getText() + "<" + $pid.getText());}  NEWLINE* LCURLYBRACE NEWLINE+ classBody NEWLINE* RCURLYBRACE
+
     ;
 
 classBody
-    :((classStatement NEWLINE+) | (methodDeclaration NEWLINE+))*
+    : (classStatement NEWLINE+)* (methodDeclaration NEWLINE+)* (initializeMethodDeclaration NEWLINE+) ((methodDeclaration NEWLINE+))*
     ;
 
 
@@ -46,6 +48,7 @@ classStatement
     ;
 
 methodDeclaration
+
 //    : accessModifier returnType IDENTIFIER LPAR methodParams? RPAR methodBodyReturn
     : accessModifier (VOID? | type) id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR methodParams? RPAR NEWLINE* ruleLCURLYBRACE methodBody ruleRCURLYBRACE
     | PUBLIC id=INITIALIZE LPAR methodParams? RPAR NEWLINE* ruleLCURLYBRACE methodBody ruleRCURLYBRACE
@@ -53,7 +56,17 @@ methodDeclaration
     ;
 
 methodBody
-    : (declaration NEWLINE*)* scope
+
+    : accessModifier (VOID? | type) IDENTIFIER LPAR methodParams? RPAR LCURLYBRACE NEWLINE* scope RCURLYBRACE
+
+    ;
+
+initializeMethodDeclaration
+    : accessModifier INITIALIZE LPAR methodParams? RPAR LCURLYBRACE NEWLINE* scope RCURLYBRACE
+    ;
+
+mainInitializeMethodDeclaration
+    : accessModifier INITIALIZE LPAR RPAR LCURLYBRACE NEWLINE* scope RCURLYBRACE
     ;
 
 /*
@@ -76,11 +89,18 @@ methodArgs
     | IDENTIFIER
     ;
 
+newSetArgs
+    : signedIntLiteral COMMA newSetArgs
+    | signedIntLiteral
+    ;
+
+
 declaration
     : accessModifier? type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} (COMMA id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());})*
     | accessModifier? type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} (ASSIGN expression)?
 
     ;
+
 
 assignment
     : IDENTIFIER ASSIGN expression
@@ -120,13 +140,15 @@ methodCallStatement
     : IDENTIFIER {System.out.println("MethodCall");} LPAR methodArgs? RPAR
     ;
 loopStatement
-    : (range | IDENTIFIER) DOT EACH {System.out.println("Loop : each");} DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope NEWLINE* RCURLYBRACE | NEWLINE+ statement NEWLINE*)
+
+    : (expression | range | IDENTIFIER) DOT EACH DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope NEWLINE* RCURLYBRACE | NEWLINE+ statement NEWLINE*)
+
     ;
 
+// TODO: Check whether the usage of negative int's is correct
 range
-    : LPAR INT_LITERAL DOT DOT INT_LITERAL RPAR
+    : LPAR signedIntLiteral DOT DOT signedIntLiteral RPAR
     ;
-
 
 statementBlock
     : NEWLINE* LCURLYBRACE NEWLINE* scope RCURLYBRACE
@@ -206,18 +228,31 @@ preUnaryExpression
     ;
 
 postUnaryExpression:
+
      accessExpression (op=PLUSPLUS|op=MINUSMINUS)? //{System.out.println("Operator : " + $op.getText());}
+
     ;
 
-// TODO: Enfocre .new() to be called on CLASS_IDENTIFIERS
+setExpression
+        : SET (DOT NEW LPAR (newSetArgs? | LPAR newSetArgs RPAR) RPAR)
+        | IDENTIFIER DOT ((ADD | INCLUDE | DELETE) LPAR signedIntLiteral RPAR| MERGE LPAR (setExpression | IDENTIFIER) RPAR )
+        ;
+
+newClassExpression
+        : CLASS_IDENTIFIER DOT NEW LPAR methodArgs? RPAR
+        ;
+
+// TODO: Must also have "(LPAR methodArgs? RPAR)" in the second line
 accessExpression:
-    otherExpression ((LPAR methodArgs? RPAR) | (DOT NEW) | (DOT DELETE) | (DOT NEW) | (DOT IDENTIFIER))*
-                 ((LBRACK expression RBRACK) | (DOT NEW) | (DOT DELETE) | (DOT NEW) | (DOT IDENTIFIER))*
+    otherExpression ((LPAR methodArgs? RPAR) | (DOT IDENTIFIER))*
+                 ((LBRACK expression RBRACK) | (DOT IDENTIFIER))*
     ;
 
+//TODO: Is "LPAR (methodArgs?) RPAR" RHS needed?
 otherExpression:
-    /*value | */literal | SET | IDENTIFIER | LPAR (methodArgs?) RPAR/* | size | append*/
+    /*value | */literal | IDENTIFIER | LPAR (methodArgs?) RPAR/* | size | append*/
     ;
+
 /*functionSection
     : (NewLine* function)*
     ;
@@ -392,7 +427,7 @@ type
     ;
 
 arrayType
-    : (INT | BOOL | CLASS_IDENTIFIER) (LBRACK INT_LITERAL RBRACK)+
+    : (INT | BOOL | CLASS_IDENTIFIER) (LBRACK POSITIVE_INT_LITERAL RBRACK)+
     ;
 
 fptrType
@@ -420,9 +455,11 @@ params
 */
 
 // TODO: Add array literal types
+// TODO: Is Null valid as value?
 literal
-    : INT_LITERAL
+    : signedIntLiteral
     | boolLiteral
+    | NULL
 //    | setLiteral
     ;
 //
@@ -434,8 +471,12 @@ boolLiteral
     : TRUE
     | FALSE
     ;
+signedIntLiteral
+    : (PLUS | MINUS)? POSITIVE_INT_LITERAL
+    ;
 
-INT_LITERAL
+// TODO: What about negtive values?
+POSITIVE_INT_LITERAL
     : [1-9] [0-9]*
     | [0]
     ;
@@ -538,8 +579,9 @@ CLASS_IDENTIFIER: [A-Z] [a-zA-Z0-9_]*;
 
 NEWLINE: [\n\r];
 
+WS: [ \t;\n] -> skip;
+SEMICOLON: ';\n' ->skip;
 SCOPE_COMMENT: '=begin\n' .*? '\n=end' -> skip;
 INLINE_COMMENT: '#' .*? '\n' -> skip;
 
-WS: [ \t;\n] -> skip;
 
