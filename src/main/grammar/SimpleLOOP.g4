@@ -213,32 +213,32 @@ inlineConditionalExpressionPrime
     ;
 
 orExpression:
-    andExpression op = OR andExpression {System.out.println("Operator : " + $op.getText());}
+    andExpression (op = OR andExpression {System.out.println("Operator : " + $op.getText());})*
     | andExpression
     ;
 
 andExpression:
-    equalityExpression op = AND equalityExpression {System.out.println("Operator : " + $op.getText());}
+    equalityExpression (op = AND equalityExpression {System.out.println("Operator : " + $op.getText());})*
     | equalityExpression
     ;
 
 equalityExpression:
-    relationalExpression op =  EQUALS relationalExpression  {System.out.println("Operator : " + $op.getText());}
+    relationalExpression (op =  EQUALS relationalExpression  {System.out.println("Operator : " + $op.getText());})*
     | relationalExpression
     ;
 
 relationalExpression:
-    additiveExpression (op= GT | op = LT) additiveExpression {System.out.println("Operator : " + $op.getText());}
+    additiveExpression ((op= GT | op = LT) additiveExpression {System.out.println("Operator : " + $op.getText());})*
     | additiveExpression
     ;
 
 additiveExpression:
-    multiplicativeExpression (op=PLUS | op=MINUS) multiplicativeExpression {System.out.println("Operator : " + $op.getText());}
+    multiplicativeExpression ((op=PLUS | op=MINUS) multiplicativeExpression {System.out.println("Operator : " + $op.getText());})*
     | multiplicativeExpression
     ;
 
 multiplicativeExpression:
-    preUnaryExpression (op=MULT | op=DIVIDE) preUnaryExpression {System.out.println("Operator : " + $op.getText());}
+    preUnaryExpression ((op=MULT | op=DIVIDE) preUnaryExpression {System.out.println("Operator : " + $op.getText());})*
     |preUnaryExpression
     ;
 
@@ -248,14 +248,12 @@ preUnaryExpression
     ;
 
 postUnaryExpression:
-
      (setExpression | selfExpression | newClassExpression | accessExpression)(PLUSPLUS|MINUSMINUS)?
-
     ;
 
 setExpression
         : SET (DOT NEW {System.out.println("NEW");} LPAR (newSetArgs? | LPAR newSetArgs RPAR) RPAR)
-        | IDENTIFIER DOT ((ADD {System.out.println("ADD");} | INCLUDE {System.out.println("INCLUDE");} | DELETE {System.out.println("DELETE");}) LPAR signedIntLiteral RPAR| MERGE LPAR (setExpression | IDENTIFIER) RPAR )
+        | IDENTIFIER DOT ((ADD {System.out.println("ADD");} | INCLUDE {System.out.println("INCLUDE");} | DELETE {System.out.println("DELETE");}) LPAR (signedIntLiteral | IDENTIFIER) RPAR| MERGE LPAR (setExpression | IDENTIFIER) RPAR )
         ;
 
 selfExpression
