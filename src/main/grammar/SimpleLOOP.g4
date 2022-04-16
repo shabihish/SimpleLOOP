@@ -1,7 +1,9 @@
 grammar SimpleLOOP;
 
 simpleLoop
+
     : NEWLINE* (declaration NEWLINE*)* (classDec NEWLINE*)* mainClassDec NEWLINE* (classDec NEWLINE*)* EOF
+
     ;
 
 // if inheritance should we print both statements??
@@ -18,11 +20,13 @@ ruleRCURLYBRACE
 
 
 mainClassDec
-    : CLASS NEWLINE* id=MAIN {System.out.println("ClassDec : " + $id.getText());} NEWLINE* LCURLYBRACE NEWLINE* classBody NEWLINE* RCURLYBRACE
+//    : CLASS NEWLINE* MAIN NEWLINE* LCURLYBRACE NEWLINE* classBody NEWLINE* RCURLYBRACE
+    :CLASS NEWLINE* id=MAIN {System.out.println("ClassDec : " + $id.getText());} NEWLINE* LCURLYBRACE NEWLINE+ classBody NEWLINE* RCURLYBRACE
     ;
 
 classDec
-
+//    : CLASS NEWLINE* CLASS_IDENTIFIER NEWLINE* LCURLYBRACE NEWLINE* classBody NEWLINE* RCURLYBRACE
+//    | CLASS NEWLINE* CLASS_IDENTIFIER LT CLASS_IDENTIFIER LCURLYBRACE NEWLINE+ classBody RCURLYBRACE
     : CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} NEWLINE* LCURLYBRACE NEWLINE+ classBody NEWLINE* RCURLYBRACE
     | CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} LT pid=CLASS_IDENTIFIER {System.out.println("Inheritance : " + $id.getText() + "<" + $pid.getText());}  NEWLINE* LCURLYBRACE NEWLINE+ classBody NEWLINE* RCURLYBRACE
 
@@ -43,41 +47,40 @@ classScopeprime
 
 classStatement
     : assignment
-    | declaration
+    | classFieldDeclaration
     | classScope
     ;
 
+// TODO: Check if any constraints are to be enforced by method var declaration rules
 methodDeclaration
-
-//    : accessModifier returnType IDENTIFIER LPAR methodParams? RPAR methodBodyReturn
-    : accessModifier (VOID? | type) id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR methodParams? RPAR NEWLINE* ruleLCURLYBRACE methodBody ruleRCURLYBRACE
-    | PUBLIC id=INITIALIZE LPAR methodParams? RPAR NEWLINE* ruleLCURLYBRACE methodBody ruleRCURLYBRACE
-
-    ;
-
-methodBody
-
-    : accessModifier (VOID? | type) IDENTIFIER LPAR methodParams? RPAR LCURLYBRACE NEWLINE* scope RCURLYBRACE
-
+    : accessModifier (VOID? | type) id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR LCURLYBRACE NEWLINE* methodBody RCURLYBRACE
     ;
 
 initializeMethodDeclaration
-    : accessModifier INITIALIZE LPAR methodParams? RPAR LCURLYBRACE NEWLINE* scope RCURLYBRACE
+    : accessModifier INITIALIZE LPAR finalmethodParams? RPAR LCURLYBRACE NEWLINE* methodBody RCURLYBRACE
     ;
 
 mainInitializeMethodDeclaration
-    : accessModifier INITIALIZE LPAR RPAR LCURLYBRACE NEWLINE* scope RCURLYBRACE
+    : accessModifier INITIALIZE LPAR RPAR LCURLYBRACE NEWLINE* methodBody RCURLYBRACE
     ;
 
+methodBody
+    : (declaration NEWLINE*)* scope
+    ;
 /*
 methodBodyReturn
     : LCURLYBRACE NEWLINE* scope RETURN expression NEWLINE* RCURLYBRACE // expression or assignment
     ;
 */
+finalmethodParams
+    : ((methodParam (COMMA methodParam)*)? methodParams? (COMMA methodParams)*)?
+
+
+    ;
 
 methodParams
-    :methodParam COMMA methodParams
-    |methodParam
+    : ((methodParam ASSIGN otherExpression) COMMA methodParams)?
+    | methodParam ASSIGN otherExpression
     ;
 
 methodParam
@@ -94,16 +97,23 @@ newSetArgs
     | signedIntLiteral
     ;
 
-
+// TODO: Check for mandates on public/private modifiers
 declaration
-    : accessModifier? type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} (COMMA id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());})*
-    | accessModifier? type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} (ASSIGN expression)?
 
+    : type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} ASSIGN expression
+    | type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} (COMMA id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());})*
+    ;
+
+classFieldDeclaration
+    : accessModifier type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} ASSIGN expression
+    | accessModifier type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} (COMMA id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());})*
     ;
 
 
 assignment
-    : IDENTIFIER ASSIGN expression
+
+    : (IDENTIFIER | lExpression) () ASSIGN expression
+
     ;
 
 scope
@@ -113,9 +123,9 @@ scope
 statement
 //    : expression
     : assignment
-    | selfStatement
-    | printFunction
+
     | methodCallStatement
+    | funcCallStatement
     | ifStatement
     | elsifStatement
     | elseStatement
@@ -136,12 +146,19 @@ returnStatement
     : RETURN {System.out.println("Return");} expression
     | RETURN {System.out.println("Return");}
     ;
+
 methodCallStatement
     : IDENTIFIER {System.out.println("MethodCall");} LPAR methodArgs? RPAR
     ;
+
+// TODO: print args verification's left
+funcCallStatement
+    : PRINT LPAR expression RPAR
+    ;
+
 loopStatement
 
-    : (expression | range | IDENTIFIER) DOT EACH DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope NEWLINE* RCURLYBRACE | NEWLINE+ statement NEWLINE*)
+    : (expression | range | IDENTIFIER) DOT EACH {System.out.println("Loop : each");} DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope NEWLINE* RCURLYBRACE | NEWLINE+ statement NEWLINE*)
 
     ;
 
@@ -229,13 +246,17 @@ preUnaryExpression
 
 postUnaryExpression:
 
-     accessExpression (op=PLUSPLUS|op=MINUSMINUS)? //{System.out.println("Operator : " + $op.getText());}
+     (setExpression | selfExpression | newClassExpression | accessExpression)(PLUSPLUS|MINUSMINUS)?
 
     ;
 
 setExpression
-        : SET (DOT NEW LPAR (newSetArgs? | LPAR newSetArgs RPAR) RPAR)
-        | IDENTIFIER DOT ((ADD | INCLUDE | DELETE) LPAR signedIntLiteral RPAR| MERGE LPAR (setExpression | IDENTIFIER) RPAR )
+        : SET (DOT NEW {System.out.println("NEW");} LPAR (newSetArgs? | LPAR newSetArgs RPAR) RPAR)
+        | IDENTIFIER DOT ((ADD {System.out.println("ADD");} | INCLUDE {System.out.println("INCLUDE");} | DELETE {System.out.println("DELETE");}) LPAR signedIntLiteral RPAR| MERGE LPAR (setExpression | IDENTIFIER) RPAR )
+        ;
+
+selfExpression
+        : SELF (DOT IDENTIFIER (LPAR methodArgs? RPAR | LBRACK expression RBRACK)*)*
         ;
 
 newClassExpression
@@ -244,15 +265,36 @@ newClassExpression
 
 // TODO: Must also have "(LPAR methodArgs? RPAR)" in the second line
 accessExpression:
-    otherExpression ((LPAR methodArgs? RPAR) | (DOT IDENTIFIER))*
-                 ((LBRACK expression RBRACK) | (DOT IDENTIFIER))*
+//    otherExpression ((LPAR methodArgs? RPAR) | (DOT IDENTIFIER))*
+//                 ((LBRACK expression RBRACK) | (DOT IDENTIFIER))*
+        otherExpression (DOT IDENTIFIER | LPAR methodArgs? RPAR | LBRACK expression RBRACK)*
+        ;
+
+//TODO: Is "LPAR (methodArgs?) RPAR" RHS needed?
+otherExpression
+    : /*value | */literal | IDENTIFIER /* | LPAR (methodArgs?) RPAR | size | append*/
+    ;
+
+
+lExpression
+    : lAccessExpression /*(op = ASSIGN expression )?*/
+    ;
+
+// TODO: Must also have "(LPAR methodArgs? RPAR)" in the second line
+lAccessExpression/*:
+    otherExpression (((LPAR methodArgs? RPAR) | (DOT IDENTIFIER))*
+                    ((LBRACK expression RBRACK) | (DOT IDENTIFIER))*)?*/
+    : lOtherExpression (DOT IDENTIFIER | LPAR methodArgs? RPAR | LBRACK expression RBRACK)*
     ;
 
 //TODO: Is "LPAR (methodArgs?) RPAR" RHS needed?
-otherExpression:
-    /*value | */literal | IDENTIFIER | LPAR (methodArgs?) RPAR/* | size | append*/
+lOtherExpression
+    : /*value | */IDENTIFIER | SELF /* | LPAR (methodArgs?) RPAR | size | append*/
     ;
-
+/*
+printFunction
+    : PRINT {System.out.println("Built-in : print ");} LPAR expression RPAR
+    ;*/
 /*functionSection
     : (NewLine* function)*
     ;
@@ -556,6 +598,8 @@ MULT: '*';
 
 STRAIGHT_SLASH: '|';
 
+DOUBLE_SLASH: '//\n' -> skip;
+
 DIVIDE: '/';
 
 SHARP: '#';
@@ -580,8 +624,5 @@ CLASS_IDENTIFIER: [A-Z] [a-zA-Z0-9_]*;
 NEWLINE: [\n\r];
 
 WS: [ \t;\n] -> skip;
-SEMICOLON: ';\n' ->skip;
 SCOPE_COMMENT: '=begin\n' .*? '\n=end' -> skip;
 INLINE_COMMENT: '#' .*? '\n' -> skip;
-
-
