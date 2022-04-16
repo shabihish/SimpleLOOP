@@ -37,11 +37,11 @@ classStatement
 
 // TODO: Check if any constraints are to be enforced by method var declaration rules
 methodDeclaration
-    : accessModifier (VOID? | type) IDENTIFIER LPAR methodParams? RPAR LCURLYBRACE NEWLINE* methodBody RCURLYBRACE
+    : accessModifier (VOID? | type) IDENTIFIER LPAR finalmethodParams? RPAR LCURLYBRACE NEWLINE* methodBody RCURLYBRACE
     ;
 
 initializeMethodDeclaration
-    : accessModifier INITIALIZE LPAR methodParams? RPAR LCURLYBRACE NEWLINE* methodBody RCURLYBRACE
+    : accessModifier INITIALIZE LPAR finalmethodParams? RPAR LCURLYBRACE NEWLINE* methodBody RCURLYBRACE
     ;
 
 mainInitializeMethodDeclaration
@@ -56,10 +56,14 @@ methodBodyReturn
     : LCURLYBRACE NEWLINE* scope RETURN expression NEWLINE* RCURLYBRACE // expression or assignment
     ;
 */
+finalmethodParams
+    : methodParam COMMA finalmethodParams
+    | methodParams
+    ;
 
 methodParams
-    :methodParam COMMA methodParams
-    |methodParam
+    : (methodParam ASSIGN otherExpression) COMMA methodParams
+    | methodParam ASSIGN otherExpression
     ;
 
 methodParam
@@ -88,7 +92,7 @@ classFieldDeclaration
     ;
 
 assignment
-    : IDENTIFIER ASSIGN expression
+    : (IDENTIFIER | accessExpression) ASSIGN expression
     ;
 
 scope
@@ -100,6 +104,7 @@ statement
     : assignment
 //    | declaration
     | methodCallStatement
+    | funcCallStatement
     | ifStatement
     | elsifStatement
     | elseStatement
@@ -112,8 +117,14 @@ returnStatement
     : RETURN expression
     | RETURN
     ;
+
 methodCallStatement
     : IDENTIFIER LPAR methodArgs? RPAR
+    ;
+
+// TODO: print args verification's left
+funcCallStatement
+    : PRINT LPAR expression RPAR
     ;
 loopStatement
     : (expression | range | IDENTIFIER) DOT EACH DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope NEWLINE* RCURLYBRACE | NEWLINE+ statement NEWLINE*)
@@ -196,12 +207,16 @@ preUnaryExpression
     ;
 
 postUnaryExpression:
-     (setExpression | newClassExpression | accessExpression)(PLUSPLUS|MINUSMINUS)?
+     (setExpression | selfExpression | newClassExpression | accessExpression)(PLUSPLUS|MINUSMINUS)?
     ;
 
 setExpression
         : SET (DOT NEW LPAR (newSetArgs? | LPAR newSetArgs RPAR) RPAR)
         | IDENTIFIER DOT ((ADD | INCLUDE | DELETE) LPAR signedIntLiteral RPAR| MERGE LPAR (setExpression | IDENTIFIER) RPAR )
+        ;
+
+selfExpression
+        : SELF (DOT IDENTIFIER LPAR RPAR)?
         ;
 
 newClassExpression
@@ -215,10 +230,13 @@ accessExpression:
     ;
 
 //TODO: Is "LPAR (methodArgs?) RPAR" RHS needed?
-otherExpression:
-    /*value | */literal | IDENTIFIER | LPAR (methodArgs?) RPAR/* | size | append*/
+otherExpression
+    : /*value | */literal | IDENTIFIER /* | LPAR (methodArgs?) RPAR | size | append*/
     ;
 
+printFunction
+    : PRINT {System.out.println("Built-in : print ");} LPAR expression RPAR
+    ;
 /*functionSection
     : (NewLine* function)*
     ;
@@ -549,5 +567,3 @@ WS: [ \t;\n] -> skip;
 
 SCOPE_COMMENT: '=begin\n' .*? '\n=end' -> skip;
 INLINE_COMMENT: '#' .*? '\n' -> skip;
-
-
