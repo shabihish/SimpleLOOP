@@ -73,13 +73,16 @@ methodBodyReturn
     ;
 */
 finalmethodParams
-    : ((methodParam (COMMA methodParam)*)? methodParams? (COMMA methodParams)*)?
-
-
+    : methodParamsWithoutDefaultVal (COMMA methodParamsWithDefaultVal)?
     ;
 
-methodParams
-    : ((methodParam ASSIGN otherExpression) COMMA methodParams)?
+methodParamsWithoutDefaultVal
+    : methodParam COMMA methodParamsWithoutDefaultVal
+    | methodParam
+    ;
+
+methodParamsWithDefaultVal
+    : (methodParam ASSIGN otherExpression) COMMA methodParamsWithDefaultVal
     | methodParam ASSIGN otherExpression
     ;
 
