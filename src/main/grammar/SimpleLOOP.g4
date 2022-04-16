@@ -559,6 +559,8 @@ MULT: '*';
 
 STRAIGHT_SLASH: '|';
 
+DOUBLE_SLASH: '//\n' -> skip;
+
 DIVIDE: '/';
 
 SHARP: '#';
