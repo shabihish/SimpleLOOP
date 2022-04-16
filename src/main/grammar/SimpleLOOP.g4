@@ -153,9 +153,10 @@ range
     : LPAR expression DOT DOT expression RPAR
     ;
 
+/*
 statementBlock
     : NEWLINE* LCURLYBRACE NEWLINE* scope RCURLYBRACE
-    | NEWLINE+ statement NEWLINE+
+    | NEWLINE* statement NEWLINE+
     ;
 
 ifStatement
@@ -168,7 +169,7 @@ ifStatementBlock
     ;
 
 elseStatement
-    : IF {System.out.println("Conditional : if");} expression ifStatementBlock ELSE {System.out.println("Conditional : else");} statementBlock
+    : IF {System.out.println("Conditional : if");} expression ifStatementBlock NEWLINE+ ELSE {System.out.println("Conditional : else");} statementBlock
     ;
 
 elsifStatement
@@ -181,7 +182,38 @@ insideIfStatementBlock
     | elseStatement
 //    | returnStatement
     ;
-// todo COPYED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+*/
+
+statementBlock
+    : NEWLINE* LCURLYBRACE NEWLINE* scope RCURLYBRACE
+    | NEWLINE* statement
+    ;
+
+ifStatement
+    : IF {System.out.println("Conditional : if");} expression statementBlock
+    ;
+
+ifStatementBlock
+    : LCURLYBRACE NEWLINE* scope RCURLYBRACE
+    | NEWLINE* insideIfStatementBlock
+    ;
+
+elseStatement
+    : IF {System.out.println("Conditional : if");} expression ifStatementBlock NEWLINE+ ELSE {System.out.println("Conditional : else");} statementBlock
+    ;
+
+elsifStatement
+    : IF {System.out.println("Conditional : if");} expression ifStatementBlock NEWLINE+ (NEWLINE* ELSIF {System.out.println("Conditional : elsif");} expression statementBlock)+ (NEWLINE+  ELSE {System.out.println("Conditional : else");} statementBlock)?
+    ;
+insideIfStatementBlock
+    : expression SEMICOLON?
+    | returnStatement SEMICOLON?
+    | assignment SEMICOLON?
+    | elsifStatement
+    | elseStatement
+    ;
+
+// todo COPIED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 //todo
 expression
     : LPAR expression RPAR
