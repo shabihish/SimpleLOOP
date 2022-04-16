@@ -1,16 +1,20 @@
 grammar SimpleLOOP;
 
 simpleLoop
-    : NEWLINE* (classDec NEWLINE*)* mainClassDec NEWLINE* (classDec NEWLINE*)* EOF
+  : NEWLINE* (declaration NEWLINE*)* (classDec NEWLINE*)* mainClassDec NEWLINE* (classDec NEWLINE*)* EOF
+//    : NEWLINE* (classDec NEWLINE*)* mainClassDec NEWLINE* (classDec NEWLINE*)* EOF
     ;
 
 mainClassDec
-    : CLASS NEWLINE* MAIN NEWLINE* LCURLYBRACE NEWLINE* classBody NEWLINE* RCURLYBRACE
+//    : CLASS NEWLINE* MAIN NEWLINE* LCURLYBRACE NEWLINE* classBody NEWLINE* RCURLYBRACE
+    :CLASS NEWLINE* id=MAIN {System.out.println("ClassDec : " + $id.getText());} NEWLINE* LCURLYBRACE NEWLINE+ classBody NEWLINE* RCURLYBRACE
     ;
 
 classDec
-    : CLASS NEWLINE* CLASS_IDENTIFIER NEWLINE* LCURLYBRACE NEWLINE* classBody NEWLINE* RCURLYBRACE
-    | CLASS NEWLINE* CLASS_IDENTIFIER LT CLASS_IDENTIFIER LCURLYBRACE NEWLINE+ classBody RCURLYBRACE
+//    : CLASS NEWLINE* CLASS_IDENTIFIER NEWLINE* LCURLYBRACE NEWLINE* classBody NEWLINE* RCURLYBRACE
+//    | CLASS NEWLINE* CLASS_IDENTIFIER LT CLASS_IDENTIFIER LCURLYBRACE NEWLINE+ classBody RCURLYBRACE
+    : CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} NEWLINE* LCURLYBRACE NEWLINE+ classBody NEWLINE* RCURLYBRACE
+    | CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} LT pid=CLASS_IDENTIFIER {System.out.println("Inheritance : " + $id.getText() + "<" + $pid.getText());}  NEWLINE* LCURLYBRACE NEWLINE+ classBody NEWLINE* RCURLYBRACE
     ;
 
 classBody
@@ -27,22 +31,26 @@ classScopeprime
 
 classStatement
     : assignment
-    | declaration
+    | classFieldDeclaration
     | classScope
     ;
 
+// TODO: Check if any constraints are to be enforced by method var declaration rules
 methodDeclaration
-    : accessModifier (VOID? | type) IDENTIFIER LPAR methodParams? RPAR LCURLYBRACE NEWLINE* scope RCURLYBRACE
+    : accessModifier (VOID? | type) IDENTIFIER LPAR methodParams? RPAR LCURLYBRACE NEWLINE* methodBody RCURLYBRACE
     ;
 
 initializeMethodDeclaration
-    : accessModifier INITIALIZE LPAR methodParams? RPAR LCURLYBRACE NEWLINE* scope RCURLYBRACE
+    : accessModifier INITIALIZE LPAR methodParams? RPAR LCURLYBRACE NEWLINE* methodBody RCURLYBRACE
     ;
 
 mainInitializeMethodDeclaration
-    : accessModifier INITIALIZE LPAR RPAR LCURLYBRACE NEWLINE* scope RCURLYBRACE
+    : accessModifier INITIALIZE LPAR RPAR LCURLYBRACE NEWLINE* methodBody RCURLYBRACE
     ;
 
+methodBody
+    : (declaration NEWLINE*)* scope
+    ;
 /*
 methodBodyReturn
     : LCURLYBRACE NEWLINE* scope RETURN expression NEWLINE* RCURLYBRACE // expression or assignment
@@ -68,13 +76,19 @@ newSetArgs
     | signedIntLiteral
     ;
 
-
+// TODO: Check for mandates on public/private modifiers
 declaration
-    : type IDENTIFIER
+    : type IDENTIFIER ASSIGN expression
+    | type IDENTIFIER (COMMA IDENTIFIER)*
+    ;
+
+classFieldDeclaration
+    : accessModifier type IDENTIFIER ASSIGN expression
+    | accessModifier type IDENTIFIER (COMMA IDENTIFIER)*
     ;
 
 assignment
-    : type? IDENTIFIER ASSIGN expression
+    : IDENTIFIER ASSIGN expression
     ;
 
 scope
@@ -84,12 +98,12 @@ scope
 statement
 //    : expression
     : assignment
+//    | declaration
     | methodCallStatement
     | ifStatement
     | elsifStatement
     | elseStatement
     | loopStatement
-    | declaration
     | returnStatement
     ;
 
