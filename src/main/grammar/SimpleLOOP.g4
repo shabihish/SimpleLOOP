@@ -92,7 +92,7 @@ classFieldDeclaration
     ;
 
 assignment
-    : (IDENTIFIER | accessExpression) ASSIGN expression
+    : (IDENTIFIER | lExpression) () ASSIGN expression
     ;
 
 scope
@@ -126,6 +126,7 @@ methodCallStatement
 funcCallStatement
     : PRINT LPAR expression RPAR
     ;
+
 loopStatement
     : (expression | range | IDENTIFIER) DOT EACH DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope NEWLINE* RCURLYBRACE | NEWLINE+ statement NEWLINE*)
     ;
@@ -216,7 +217,7 @@ setExpression
         ;
 
 selfExpression
-        : SELF (DOT IDENTIFIER LPAR RPAR)?
+        : SELF (DOT IDENTIFIER (LPAR methodArgs? RPAR | LBRACK expression RBRACK)*)*
         ;
 
 newClassExpression
@@ -225,18 +226,36 @@ newClassExpression
 
 // TODO: Must also have "(LPAR methodArgs? RPAR)" in the second line
 accessExpression:
-    otherExpression ((LPAR methodArgs? RPAR) | (DOT IDENTIFIER))*
-                 ((LBRACK expression RBRACK) | (DOT IDENTIFIER))*
-    ;
+//    otherExpression ((LPAR methodArgs? RPAR) | (DOT IDENTIFIER))*
+//                 ((LBRACK expression RBRACK) | (DOT IDENTIFIER))*
+        otherExpression (DOT IDENTIFIER | LPAR methodArgs? RPAR | LBRACK expression RBRACK)*
+        ;
 
 //TODO: Is "LPAR (methodArgs?) RPAR" RHS needed?
 otherExpression
     : /*value | */literal | IDENTIFIER /* | LPAR (methodArgs?) RPAR | size | append*/
     ;
 
+
+lExpression
+    : lAccessExpression /*(op = ASSIGN expression )?*/
+    ;
+
+// TODO: Must also have "(LPAR methodArgs? RPAR)" in the second line
+lAccessExpression/*:
+    otherExpression (((LPAR methodArgs? RPAR) | (DOT IDENTIFIER))*
+                    ((LBRACK expression RBRACK) | (DOT IDENTIFIER))*)?*/
+    : lOtherExpression (DOT IDENTIFIER | LPAR methodArgs? RPAR | LBRACK expression RBRACK)*
+    ;
+
+//TODO: Is "LPAR (methodArgs?) RPAR" RHS needed?
+lOtherExpression
+    : /*value | */IDENTIFIER | SELF /* | LPAR (methodArgs?) RPAR | size | append*/
+    ;
+/*
 printFunction
     : PRINT {System.out.println("Built-in : print ");} LPAR expression RPAR
-    ;
+    ;*/
 /*functionSection
     : (NewLine* function)*
     ;
