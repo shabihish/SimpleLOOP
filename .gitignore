@@ -5,6 +5,7 @@
 #Internal files
 out
 *.txt
+*.sl
 gen
 
 # Compiled class file
