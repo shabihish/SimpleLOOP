@@ -33,7 +33,7 @@ classBody
     ;
 
 classScope
-    : LCURLYBRACE classStatement? RCURLYBRACE classScopeprime
+    : LCURLYBRACE classStatement? RCURLYBRACE NEWLINE+ classScopeprime
     ;
 
 classScopeprime
@@ -48,15 +48,15 @@ classStatement
 
 // TODO: Check if any constraints are to be enforced by method var declaration rules
 methodDeclaration
-    : accessModifier (VOID | type) id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE+ methodBody RCURLYBRACE | NEWLINE+ statement NEWLINE+)
+    : accessModifier (VOID | type) id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE+ methodBody RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
     ;
 
 initializeMethodDeclaration
-    : accessModifier INITIALIZE LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE* methodBody RCURLYBRACE | NEWLINE+ statement NEWLINE+)
+    : accessModifier INITIALIZE LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE* methodBody RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
     ;
 
 mainInitializeMethodDeclaration
-    : accessModifier INITIALIZE LPAR RPAR (NEWLINE* LCURLYBRACE NEWLINE* methodBody RCURLYBRACE | NEWLINE+ statement NEWLINE+)
+    : accessModifier INITIALIZE LPAR RPAR (NEWLINE* LCURLYBRACE NEWLINE* methodBody RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
     ;
 
 methodBody
@@ -114,21 +114,20 @@ assignment
     ;
 
 scope
-    : ((statement NEWLINE+)+ | NEWLINE*)
+    : (statement+)
     ;
 
 statement
-
-    : methodCall SEMICOLON?
-    | assignment SEMICOLON?
-    | postUnaryExpression SEMICOLON?
+    : methodCall SEMICOLON? NEWLINE+
+    | assignment SEMICOLON? NEWLINE+
+    | postUnaryExpression SEMICOLON? NEWLINE+
   //  | methodCallStatement SEMICOLON?
-    | funcCallStatement SEMICOLON?
+    | funcCallStatement SEMICOLON? NEWLINE+
     | ifStatement
     | elsifStatement
     | elseStatement
     | loopStatement
-    | returnStatement SEMICOLON?
+    | returnStatement SEMICOLON? NEWLINE+
     ;
 
 methodCall
@@ -169,7 +168,7 @@ funcCallStatement
     ;
 
 loopStatement
-    : (expression | range | IDENTIFIER) DOT EACH {System.out.println("Loop : each");} DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope RCURLYBRACE | NEWLINE+ statement NEWLINE+)
+    : (expression | range) DOT EACH {System.out.println("Loop : each");} DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
     ;
 
 // TODO: Check whether the usage of negative int's is correct
@@ -209,8 +208,8 @@ insideIfStatementBlock
 */
 
 statementBlock
-    : NEWLINE* LCURLYBRACE NEWLINE+ scope RCURLYBRACE
-    | NEWLINE+ statement NEWLINE+
+    : NEWLINE* LCURLYBRACE NEWLINE+ scope RCURLYBRACE NEWLINE+
+    | NEWLINE+ statement
     ;
 
 ifStatement
