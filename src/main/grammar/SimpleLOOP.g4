@@ -1,35 +1,35 @@
 grammar SimpleLOOP;
 
 simpleLoop
-    : NEWLINE* (declaration NEWLINE*)* (classDec NEWLINE*)* (mainClassDec NEWLINE*)? (classDec NEWLINE*)* EOF
+    : NEWLINE* (declaration NEWLINE+)* (classDec)* (mainClassDec)? (classDec)* EOF
     ;
 
 // if inheritance should we print both statements??
 // VarDec in both
 
+/*
 ruleLCURLYBRACE
     : NEWLINE* LCURLYBRACE NEWLINE+
     ;
 
 ruleRCURLYBRACE
     : NEWLINE+ RCURLYBRACE NEWLINE+
-    ;
-
+    ;*/
 
 mainClassDec
 //    : CLASS NEWLINE* MAIN NEWLINE* LCURLYBRACE NEWLINE* classBody NEWLINE* RCURLYBRACE
-    :CLASS NEWLINE* id=MAIN {System.out.println("ClassDec : " + $id.getText());} (NEWLINE* LCURLYBRACE NEWLINE+ classBody NEWLINE* RCURLYBRACE | NEWLINE+ (classStatement | methodDeclaration) NEWLINE+)
+    :CLASS NEWLINE* id=MAIN {System.out.println("ClassDec : " + $id.getText());} (NEWLINE* LCURLYBRACE NEWLINE+ classBody RCURLYBRACE NEWLINE+ | NEWLINE+ (classStatement | methodDeclaration) NEWLINE+)
     ;
 
 classDec
 //    : CLASS NEWLINE* CLASS_IDENTIFIER NEWLINE* LCURLYBRACE NEWLINE* classBody NEWLINE* RCURLYBRACE
 //    | CLASS NEWLINE* CLASS_IDENTIFIER LT CLASS_IDENTIFIER LCURLYBRACE NEWLINE+ classBody RCURLYBRACE
-    : CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} (NEWLINE* LCURLYBRACE NEWLINE+ classBody NEWLINE* RCURLYBRACE | NEWLINE+ (classStatement | methodDeclaration) NEWLINE+)
-    | CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} LT pid=CLASS_IDENTIFIER {System.out.println("Inheritance : " + $id.getText() + " < " + $pid.getText());}  NEWLINE* (LCURLYBRACE NEWLINE+ classBody NEWLINE* RCURLYBRACE | NEWLINE+ (classStatement | methodDeclaration) NEWLINE+)
+    : CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} (NEWLINE* LCURLYBRACE NEWLINE+ classBody RCURLYBRACE  NEWLINE+ | NEWLINE+ (classStatement | methodDeclaration) NEWLINE+)
+    | CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} LT pid=CLASS_IDENTIFIER {System.out.println("Inheritance : " + $id.getText() + " < " + $pid.getText());}  (NEWLINE* LCURLYBRACE NEWLINE+ classBody RCURLYBRACE  NEWLINE+ | NEWLINE+ (classStatement | methodDeclaration) NEWLINE+)
     ;
 
 classBody
-    : ((classStatement NEWLINE+) | (methodDeclaration NEWLINE+))* (initializeMethodDeclaration NEWLINE+)? ((classStatement NEWLINE+) | (methodDeclaration NEWLINE+))*
+    : (((classStatement NEWLINE+) | (methodDeclaration NEWLINE+))* (initializeMethodDeclaration NEWLINE+)? ((classStatement NEWLINE+) | (methodDeclaration NEWLINE+))* | NEWLINE*)
     ;
 
 classScope
@@ -41,14 +41,14 @@ classScopeprime
     ;
 
 classStatement
-    : assignment
-    | classFieldDeclaration
+    : assignment SEMICOLON?
+    | classFieldDeclaration SEMICOLON?
     | classScope
     ;
 
 // TODO: Check if any constraints are to be enforced by method var declaration rules
 methodDeclaration
-    : accessModifier (VOID | type) id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE* methodBody RCURLYBRACE | NEWLINE+ statement NEWLINE+)
+    : accessModifier (VOID | type) id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE+ methodBody RCURLYBRACE | NEWLINE+ statement NEWLINE+)
     ;
 
 initializeMethodDeclaration
@@ -114,7 +114,7 @@ assignment
     ;
 
 scope
-    : NEWLINE* (statement NEWLINE+)* NEWLINE*
+    : ((statement NEWLINE+)+ | NEWLINE*)
     ;
 
 statement
@@ -132,8 +132,7 @@ statement
     ;
 
 methodCall
-
-    : {System.out.println("MethodCall");} megitthodCallExpression LPAR (methodArgs | literal)? RPAR
+    : {System.out.println("MethodCall");} methodCallExpression LPAR (methodArgs | literal)? RPAR
 
     ;
 methodCallExpression
@@ -141,11 +140,9 @@ methodCallExpression
     ;
 
 methodCallExpressionprime
-
     : DOT valExpression methodCallExpressionprime
     | LBRACK expression RBRACK DOT (valExpression|INITIALIZE) methodCallExpressionprime
-    | DOT IDENTIFIER (LPAR methodArgs? RPAR | LBRACK expression RBRACK)* methodCallExpressionprime
-    | ()?
+    | (DOT IDENTIFIER (LPAR methodArgs? RPAR | LBRACK expression RBRACK)* methodCallExpressionprime)?
     ;
 
 valExpression
@@ -172,7 +169,7 @@ funcCallStatement
     ;
 
 loopStatement
-    : (expression | range | IDENTIFIER) DOT EACH {System.out.println("Loop : each");} DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope NEWLINE* RCURLYBRACE | NEWLINE+ statement NEWLINE*)
+    : (expression | range | IDENTIFIER) DOT EACH {System.out.println("Loop : each");} DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope RCURLYBRACE | NEWLINE+ statement NEWLINE+)
     ;
 
 // TODO: Check whether the usage of negative int's is correct
@@ -212,8 +209,8 @@ insideIfStatementBlock
 */
 
 statementBlock
-    : NEWLINE* LCURLYBRACE NEWLINE* scope RCURLYBRACE
-    | NEWLINE* statement
+    : NEWLINE* LCURLYBRACE NEWLINE+ scope RCURLYBRACE
+    | NEWLINE+ statement NEWLINE+
     ;
 
 ifStatement
@@ -221,22 +218,25 @@ ifStatement
     ;
 
 ifStatementBlock
-    : LCURLYBRACE NEWLINE* scope RCURLYBRACE
-    | NEWLINE* insideIfStatementBlock
+    : NEWLINE* LCURLYBRACE NEWLINE+ scope RCURLYBRACE NEWLINE+
+    | NEWLINE+ (insideIfStatementBlock1 NEWLINE+ | insideIfStatementBlock2)
     ;
 
 elseStatement
-    : IF {System.out.println("Conditional : if");} expression ifStatementBlock NEWLINE+ ELSE {System.out.println("Conditional : else");} statementBlock
+    : IF {System.out.println("Conditional : if");} expression ifStatementBlock ELSE {System.out.println("Conditional : else");} statementBlock
     ;
 
 elsifStatement
-    : IF {System.out.println("Conditional : if");} expression ifStatementBlock NEWLINE+ (NEWLINE* ELSIF {System.out.println("Conditional : elsif");} expression statementBlock)+ (NEWLINE+  ELSE {System.out.println("Conditional : else");} statementBlock)?
+    : IF {System.out.println("Conditional : if");} expression ifStatementBlock (ELSIF {System.out.println("Conditional : elsif");} expression statementBlock)+ (ELSE {System.out.println("Conditional : else");} statementBlock)?
     ;
-insideIfStatementBlock
+
+insideIfStatementBlock1
     : expression SEMICOLON?
     | returnStatement SEMICOLON?
     | assignment SEMICOLON?
-    | elsifStatement
+    ;
+insideIfStatementBlock2
+    : elsifStatement
     | elseStatement
     ;
 
@@ -664,7 +664,8 @@ CLASS_IDENTIFIER: [A-Z] [a-zA-Z0-9_]*;
 
 NEWLINE: [\n\r];
 
+SCOPE_COMMENT: '=begin' NEWLINE+ .*? NEWLINE+ [ \t]* '=end' -> skip;
+INLINE_COMMENT: '#' .*? '\n' -> skip;
+
 WS: [ \t] -> skip;
 
-SCOPE_COMMENT: '=begin\n' .*? '\n' [ \t]* '=end' -> skip;
-INLINE_COMMENT: '#' .*? '\n' -> skip;
