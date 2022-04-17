@@ -86,8 +86,8 @@ methodParam
     ;
 
 methodArgs
-    : (IDENTIFIER | expression | IDENTIFIER ASSIGN expression {System.out.println("Operator : =");}) COMMA methodArgs
-    | (IDENTIFIER | expression | IDENTIFIER ASSIGN expression {System.out.println("Operator : =");})
+    : (expression | IDENTIFIER ASSIGN expression {System.out.println("Operator : =");}) COMMA methodArgs
+    | (expression | IDENTIFIER ASSIGN expression {System.out.println("Operator : =");})
     ;
 
 newSetArgs
@@ -108,8 +108,7 @@ classFieldDeclaration
 
 
 assignment
-
-    : (IDENTIFIER | lExpression) () ASSIGN expression {System.out.println("Operator : =");}
+    : lExpression ASSIGN expression {System.out.println("Operator : =");}
 
     ;
 
@@ -118,7 +117,8 @@ scope
     ;
 
 statement
-    : methodCall SEMICOLON? NEWLINE+
+//    : methodCall SEMICOLON? NEWLINE+
+    : lExpression SEMICOLON? NEWLINE+
     | assignment SEMICOLON? NEWLINE+
     | postUnaryExpression SEMICOLON? NEWLINE+
   //  | methodCallStatement SEMICOLON?
@@ -130,6 +130,7 @@ statement
     | returnStatement SEMICOLON? NEWLINE+
     ;
 
+/*
 methodCall
     : {System.out.println("MethodCall");} methodCallExpression LPAR (methodArgs | literal)? RPAR
 
@@ -151,7 +152,7 @@ valExpression
     | SELF
     ;
 
-
+*/
 returnStatement
 //TODO: function or variable return
     : RETURN {System.out.println("Return");} expression
@@ -218,7 +219,7 @@ ifStatement
 
 ifStatementBlock
     : NEWLINE* LCURLYBRACE NEWLINE+ scope RCURLYBRACE NEWLINE+
-    | NEWLINE+ (insideIfStatementBlock1 NEWLINE+ | insideIfStatementBlock2)
+    | NEWLINE+ insideIfStatementBlock
     ;
 
 elseStatement
@@ -229,13 +230,11 @@ elsifStatement
     : IF {System.out.println("Conditional : if");} expression ifStatementBlock (ELSIF {System.out.println("Conditional : elsif");} expression statementBlock)+ (ELSE {System.out.println("Conditional : else");} statementBlock)?
     ;
 
-insideIfStatementBlock1
-    : expression SEMICOLON?
-    | returnStatement SEMICOLON?
-    | assignment SEMICOLON?
-    ;
-insideIfStatementBlock2
-    : elsifStatement
+insideIfStatementBlock
+    : expression SEMICOLON? NEWLINE+
+    | returnStatement SEMICOLON? NEWLINE+
+    | assignment SEMICOLON? NEWLINE+
+    | elsifStatement
     | elseStatement
     ;
 
@@ -294,8 +293,12 @@ postUnaryExpression:
     ;
 
 setExpression
-        : SET (DOT NEW {System.out.println("NEW");} LPAR (newSetArgs? | LPAR newSetArgs RPAR) RPAR)
-        | IDENTIFIER DOT ((ADD {System.out.println("ADD");} | INCLUDE {System.out.println("INCLUDE");} | DELETE {System.out.println("DELETE");}) LPAR (expression) RPAR| MERGE LPAR (setExpression | IDENTIFIER) RPAR )
+        : SET (DOT NEW {System.out.println("NEW");} LPAR (newSetArgs? | LPAR newSetArgs RPAR) RPAR) setExpressionPrime
+        | (accessExpression | selfExpression) DOT ((ADD {System.out.println("ADD");} | INCLUDE {System.out.println("INCLUDE");} | DELETE {System.out.println("DELETE");}) LPAR expression RPAR | MERGE LPAR (setExpression | IDENTIFIER) RPAR ) setExpressionPrime
+        ;
+
+setExpressionPrime
+        : (DOT ((ADD {System.out.println("ADD");} | INCLUDE {System.out.println("INCLUDE");} | DELETE {System.out.println("DELETE");}) LPAR expression RPAR | MERGE LPAR (setExpression | IDENTIFIER) RPAR ) setExpressionPrime)?
         ;
 
 selfExpression
