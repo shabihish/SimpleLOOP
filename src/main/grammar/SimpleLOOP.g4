@@ -92,13 +92,13 @@ newSetArgs
 
 // TODO: Check for mandates on public/private modifiers
 declaration
-    : type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} ASSIGN expression SEMICOLON?
+    : type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} ASSIGN expression {System.out.println("Operator : =");} SEMICOLON?
     | type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} (COMMA id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());})* SEMICOLON?
     ;
 
 classFieldDeclaration
     : accessModifier type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} (COMMA id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());})* SEMICOLON?
-    | accessModifier type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} ASSIGN expression SEMICOLON?
+    | accessModifier type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} ASSIGN expression {System.out.println("Operator : =");} SEMICOLON?
     ;
 
 assignment
@@ -275,7 +275,7 @@ lExpression
 
 // TODO: Must also have "(LPAR methodArgs? RPAR)" in the second line
 lAccessExpression
-    : lOtherExpression (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR | LBRACK expression RBRACK)*
+    : lOtherExpression (DOT (IDENTIFIER | INITIALIZE) | LPAR {System.out.println("MethodCall");} methodArgs? RPAR | LBRACK expression RBRACK)*
     ;
 
 //TODO: Is "LPAR (methodArgs?) RPAR" RHS needed?
