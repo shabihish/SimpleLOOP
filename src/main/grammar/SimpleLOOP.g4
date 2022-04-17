@@ -25,7 +25,7 @@ classDec
 //    : CLASS NEWLINE* CLASS_IDENTIFIER NEWLINE* LCURLYBRACE NEWLINE* classBody NEWLINE* RCURLYBRACE
 //    | CLASS NEWLINE* CLASS_IDENTIFIER LT CLASS_IDENTIFIER LCURLYBRACE NEWLINE+ classBody RCURLYBRACE
     : CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} (NEWLINE* LCURLYBRACE NEWLINE+ classBody NEWLINE* RCURLYBRACE | NEWLINE+ (classStatement | methodDeclaration) NEWLINE+)
-    | CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} LT pid=CLASS_IDENTIFIER {System.out.println("Inheritance : " + $id.getText() + "<" + $pid.getText());}  NEWLINE* (LCURLYBRACE NEWLINE+ classBody NEWLINE* RCURLYBRACE | NEWLINE+ (classStatement | methodDeclaration) NEWLINE+)
+    | CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} LT pid=CLASS_IDENTIFIER {System.out.println("Inheritance : " + $id.getText() + " < " + $pid.getText());}  NEWLINE* (LCURLYBRACE NEWLINE+ classBody NEWLINE* RCURLYBRACE | NEWLINE+ (classStatement | methodDeclaration) NEWLINE+)
     ;
 
 classBody
@@ -86,8 +86,8 @@ methodParam
     ;
 
 methodArgs
-    : (IDENTIFIER | expression | IDENTIFIER ASSIGN expression) COMMA methodArgs
-    | (IDENTIFIER | expression | IDENTIFIER ASSIGN expression)
+    : (IDENTIFIER | expression | IDENTIFIER ASSIGN expression {System.out.println("Operator : =");}) COMMA methodArgs
+    | (IDENTIFIER | expression | IDENTIFIER ASSIGN expression {System.out.println("Operator : =");})
     ;
 
 newSetArgs
@@ -109,7 +109,7 @@ classFieldDeclaration
 
 assignment
 
-    : (IDENTIFIER | lExpression) () ASSIGN expression
+    : (IDENTIFIER | lExpression) () ASSIGN expression {System.out.println("Operator : =");}
 
     ;
 
@@ -118,9 +118,11 @@ scope
     ;
 
 statement
-    : assignment SEMICOLON?
+
+    : methodCall SEMICOLON?
+    | assignment SEMICOLON?
     | postUnaryExpression SEMICOLON?
-    | methodCallStatement SEMICOLON?
+  //  | methodCallStatement SEMICOLON?
     | funcCallStatement SEMICOLON?
     | ifStatement
     | elsifStatement
@@ -129,6 +131,31 @@ statement
     | returnStatement SEMICOLON?
     ;
 
+methodCall
+
+    : {System.out.println("MethodCall");} megitthodCallExpression LPAR (methodArgs | literal)? RPAR
+
+    ;
+methodCallExpression
+    : valExpression methodCallExpressionprime
+    ;
+
+methodCallExpressionprime
+
+    : DOT valExpression methodCallExpressionprime
+    | LBRACK expression RBRACK DOT (valExpression|INITIALIZE) methodCallExpressionprime
+    | DOT IDENTIFIER (LPAR methodArgs? RPAR | LBRACK expression RBRACK)* methodCallExpressionprime
+    | ()?
+    ;
+
+valExpression
+    : LPAR expression RPAR
+    | literal
+    | IDENTIFIER
+    | SELF
+    ;
+
+
 returnStatement
 //TODO: function or variable return
     : RETURN {System.out.println("Return");} expression
@@ -136,12 +163,12 @@ returnStatement
     ;
 
 methodCallStatement
-    : (IDENTIFIER | INITIALIZE) {System.out.println("MethodCall");} LPAR methodArgs? RPAR
+    : (IDENTIFIER | INITIALIZE) LPAR methodArgs? RPAR
     ;
 
 // TODO: print args verification's left
 funcCallStatement
-    : PRINT LPAR expression RPAR
+    : PRINT {System.out.println("Built-in : print");} LPAR expression RPAR
     ;
 
 loopStatement
@@ -225,46 +252,46 @@ inlineConditionalExpression
     ;
 
 inlineConditionalExpressionPrime
-    : (op=QUESTION_MARK {System.out.println("Operator : " + $op.getText());} expression COLON expression inlineConditionalExpressionPrime)?
+    : (op=QUESTION_MARK expression COLON expression {System.out.println("Operator : ?:");} inlineConditionalExpressionPrime)?
     ;
 
 orExpression:
-    andExpression (op = OR andExpression {System.out.println("Operator : " + $op.getText());})*
+    andExpression (op = OR  andExpression {System.out.println("Operator : " + $op.getText());} )*
     | andExpression
     ;
 
 andExpression:
-    equalityExpression (op = AND equalityExpression {System.out.println("Operator : " + $op.getText());})*
+    equalityExpression (op = AND  equalityExpression {System.out.println("Operator : " + $op.getText());})*
     | equalityExpression
     ;
 
 equalityExpression:
     relationalExpression
-    | relationalExpression (op =  EQUALS relationalExpression  {System.out.println("Operator : " + $op.getText());})*
+    | relationalExpression (op =  EQUALS {System.out.println("Operator : " + $op.getText());} relationalExpression  )*
     ;
 
 relationalExpression:
     additiveExpression
-    | additiveExpression ((op= GT | op = LT) additiveExpression {System.out.println("Operator : " + $op.getText());})*
+    | additiveExpression ((op= GT | op = LT) additiveExpression  {System.out.println("Operator : " + $op.getText());} )*
     ;
 
 additiveExpression:
     multiplicativeExpression
-    | multiplicativeExpression ((op=PLUS | op=MINUS) multiplicativeExpression {System.out.println("Operator : " + $op.getText());})*
+    | multiplicativeExpression ((op=PLUS | op=MINUS)  multiplicativeExpression {System.out.println("Operator : " + $op.getText());})*
     ;
 
 multiplicativeExpression:
     preUnaryExpression
-    | preUnaryExpression ((op=MULT | op=DIVIDE) preUnaryExpression {System.out.println("Operator : " + $op.getText());})*
+    | preUnaryExpression ((op=MULT | op=DIVIDE)  preUnaryExpression {System.out.println("Operator : " + $op.getText());})*
     ;
 
 preUnaryExpression
     : postUnaryExpression
-    | (MINUS | EXCLAMATION_MARK) preUnaryExpression
+    | (op=MINUS | op=EXCLAMATION_MARK) {System.out.println("Operator : " + $op.getText());} preUnaryExpression
     ;
 
 postUnaryExpression:
-     (setExpression | selfExpression | newClassExpression | accessExpression)(PLUSPLUS|MINUSMINUS)?
+     (setExpression | selfExpression | newClassExpression | accessExpression)( op=PLUSPLUS {System.out.println("Operator : " + $op.getText());} | op=MINUSMINUS {System.out.println("Operator : " + $op.getText());})?
     ;
 
 setExpression
@@ -531,7 +558,7 @@ boolLiteral
     | FALSE
     ;
 signedIntLiteral
-    : (PLUS | MINUS)? POSITIVE_INT_LITERAL
+    : (PLUS {System.out.println("Operator : + ");}| MINUS {System.out.println("Operator : -");})? POSITIVE_INT_LITERAL
     ;
 
 // TODO: What about negtive values?
