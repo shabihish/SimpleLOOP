@@ -248,8 +248,9 @@ lExpr
     ;
 
 lAccessExpr
-       : lOtherExpr (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR |  (LBRACK expr RBRACK))* DOT (IDENTIFIER | INITIALIZE) LPAR {System.out.println("MethodCall");} methodArgs? RPAR
-       | lOtherExpr (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR | (LBRACK expr RBRACK))* (DOT (IDENTIFIER) | (LBRACK expr RBRACK))?
+       : lOtherExpr LPAR {System.out.println("MethodCall");} methodArgs? RPAR
+       | lOtherExpr (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR |  (LBRACK expr RBRACK))* DOT (IDENTIFIER | INITIALIZE) LPAR {System.out.println("MethodCall");} methodArgs? RPAR
+       | lOtherExpr ((DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR | (LBRACK expr RBRACK))* (DOT (IDENTIFIER) | (LBRACK expr RBRACK)))?
        ;
 
 secondlAccessExpression
