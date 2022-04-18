@@ -1,7 +1,7 @@
 grammar SimpleLOOP;
 
 simpleLoop
-    : NEWLINE* (declaration NEWLINE+)* (classDec)* (mainClassDec)? (classDec)* EOF
+    : NEWLINE* (declaration NEWLINE+)* (classDec)* (mainClassDec)? (classDec)* lastClassDec EOF
     ;
 
 mainClassDec
@@ -11,6 +11,11 @@ mainClassDec
 classDec
     : CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} (NEWLINE* LCURLYBRACE NEWLINE+ classBody RCURLYBRACE  NEWLINE+ | NEWLINE+ (classStatement | methodDeclaration) NEWLINE+)
     | CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} LT pid=CLASS_IDENTIFIER {System.out.println("Inheritance : " + $id.getText() + " < " + $pid.getText());}  (NEWLINE* LCURLYBRACE NEWLINE+ classBody RCURLYBRACE  NEWLINE+ | NEWLINE+ (classStatement | methodDeclaration) NEWLINE+)
+    ;
+
+lastClassDec
+    : CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} (NEWLINE* LCURLYBRACE NEWLINE+ classBody RCURLYBRACE  (NEWLINE+)? | NEWLINE+ (classStatement | methodDeclaration) (NEWLINE+)?)
+    | CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} LT pid=CLASS_IDENTIFIER {System.out.println("Inheritance : " + $id.getText() + " < " + $pid.getText());}  (NEWLINE* LCURLYBRACE NEWLINE+ classBody RCURLYBRACE  (NEWLINE+)? | NEWLINE+ (classStatement | methodDeclaration) (NEWLINE+)?)
     ;
 
 classBody
@@ -34,7 +39,8 @@ classStatement
 
 // TODO: Check if any constraints are to be enforced by method var declaration rules
 methodDeclaration
-    : accessModifier type id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE+ returningMethodBody RCURLYBRACE NEWLINE+ | NEWLINE+ returnStatement SEMICOLON? NEWLINE+)
+//    : accessModifier type id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE+ returningMethodBody RCURLYBRACE NEWLINE+ | NEWLINE+ returnStatement SEMICOLON? NEWLINE+)
+    : accessModifier type id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE+ methodBody RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
     | accessModifier VOID id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE+ methodBody RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
     ;
 
