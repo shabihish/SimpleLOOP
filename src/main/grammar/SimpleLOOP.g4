@@ -16,25 +16,14 @@ classDec
 classBody
     : ((classStatement | methodDeclaration)* initializeMethodDeclaration? (classStatement | methodDeclaration)* | NEWLINE*)
     ;
-/*
 
-classScope
-    : LCURLYBRACE NEWLINE+ classStatement? RCURLYBRACE NEWLINE+ classScopeprime
-    ;
-
-classScopeprime
-    : (classStatement NEWLINE classScopeprime)?
-    ;
-*/
 
 classStatement
-//    : assignment SEMICOLON? NEWLINE+
     : classFieldDeclaration SEMICOLON? NEWLINE+
     ;
 
 // TODO: Check if any constraints are to be enforced by method var declaration rules
 methodDeclaration
-//    : accessModifier type id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE+ returningMethodBody RCURLYBRACE NEWLINE+ | NEWLINE+ returnStatement SEMICOLON? NEWLINE+)
     : accessModifier type id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE+ methodBody RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
     | accessModifier VOID id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE+ methodBody RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
     ;
@@ -43,12 +32,6 @@ initializeMethodDeclaration
     : accessModifier INITIALIZE LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE* methodBody RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
     ;
 
-/*
-mainInitializeMethodDeclaration
-    : accessModifier INITIALIZE LPAR RPAR (NEWLINE* LCURLYBRACE NEWLINE* methodBody RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
-    ;
-*/
-
 methodBody
     : (declaration NEWLINE+)+ | (declaration NEWLINE+)* scope
     ;
@@ -56,12 +39,6 @@ methodBody
 returningMethodBody
     : (declaration NEWLINE+)* nonReturningScope? (returnStatement SEMICOLON? NEWLINE+) scope?
     ;
-
-/*
-methodBodyReturn
-    : (declaration NEWLINE*)+ | (declaration NEWLINE*)* scope
-    ;
-*/
 
 finalmethodParams
     : methodParamsWithoutDefaultVal (COMMA methodParamsWithDefaultVal)?
@@ -276,9 +253,6 @@ lExpression
 
 // TODO: Must also have "(LPAR methodArgs? RPAR)" in the second line
 lAccessExpression
-  //  : lOtherExpression (DOT (IDENTIFIER | INITIALIZE) | LPAR {System.out.println("MethodCall");} methodArgs? RPAR | LBRACK expression RBRACK)*
-  //  ;
-    
     : lOtherExpression ( DOT (INITIALIZE  |  IDENTIFIER) |  (LBRACK expression RBRACK))* LPAR {System.out.println("MethodCall");} methodArgs? RPAR secondlAccessExpression?
     | lOtherExpression (DOT (IDENTIFIER | INITIALIZE))*
     ;
