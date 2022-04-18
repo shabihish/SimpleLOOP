@@ -130,7 +130,6 @@ loopStatement
     : (expression | range) DOT EACH {System.out.println("Loop : each");} DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
     ;
 
-// TODO: Check whether the usage of negative int's is correct
 range
     : LPAR expression DOT DOT expression RPAR
     ;
@@ -399,7 +398,7 @@ CLASS_IDENTIFIER: [A-Z] [a-zA-Z0-9_]*;
 
 NEWLINE: [\n\r];
 
-SCOPE_COMMENT: '=begin' NEWLINE+ .*? NEWLINE+ [ \t]* '=end' -> skip;
-INLINE_COMMENT: '#' .*? '\n' -> skip;
+SCOPE_COMMENT: '=begin' NEWLINE .*? NEWLINE [ \t]* '=end' -> skip;
+INLINE_COMMENT: '#' .*? NEWLINE -> skip;
 
 WS: [ \t] -> skip;
