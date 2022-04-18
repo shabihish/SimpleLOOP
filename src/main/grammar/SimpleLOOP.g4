@@ -280,7 +280,7 @@ lAccessExpression
   //  ;
     
     : lOtherExpression ( DOT (INITIALIZE  |  IDENTIFIER) |  (LBRACK expression RBRACK))* LPAR {System.out.println("MethodCall");} methodArgs? RPAR secondlAccessExpression?
-    | lOtherExpression
+    | lOtherExpression (DOT (IDENTIFIER | INITIALIZE))*
     ;
   
 secondlAccessExpression
