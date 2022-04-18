@@ -22,7 +22,6 @@ classStatement
     : classFieldDeclaration SEMICOLON? NEWLINE+
     ;
 
-// TODO: Check if any constraints are to be enforced by method var declaration rules
 methodDeclaration
     : accessModifier type id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE+ methodBody RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
     | accessModifier VOID id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE+ methodBody RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
@@ -68,7 +67,6 @@ newSetArgs
     | signedIntLiteral
     ;
 
-// TODO: Check for mandates on public/private modifiers
 declaration
     : type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} ASSIGN expression {System.out.println("Operator : =");} SEMICOLON?
     | type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} (COMMA id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());})* SEMICOLON?
@@ -113,7 +111,6 @@ block
     ;
 
 returnStatement
-//TODO: function or variable return
     : RETURN {System.out.println("Return");} expression
     | RETURN {System.out.println("Return");}
     ;
@@ -122,7 +119,7 @@ methodCallStatement
     : (IDENTIFIER | INITIALIZE) LPAR methodArgs? RPAR
     ;
 
-// TODO: print args verification's left
+
 funcCallStatement
     : PRINT {System.out.println("Built-in : print");} LPAR expression RPAR
     ;
@@ -166,8 +163,6 @@ insideIfStatementBlock
     | elseStatement
     ;
 
-// todo COPIED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-//todo
 expression
     : LPAR expression RPAR
     | inlineConditionalExpression
@@ -237,12 +232,12 @@ newClassExpression
         : CLASS_IDENTIFIER DOT NEW LPAR methodArgs? RPAR
         ;
 
-// TODO: Must also have "(LPAR methodArgs? RPAR)" in the second line
+
 accessExpression
         : otherExpression (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR | LBRACK expression RBRACK)*
         ;
 
-//TODO: Is "LPAR (methodArgs?) RPAR" RHS needed?
+//: Is "LPAR (methodArgs?) RPAR" RHS needed?
 otherExpression
     : literal | IDENTIFIER  | NULL | LPAR (methodArgs?) RPAR
     ;
@@ -251,7 +246,6 @@ lExpression
     : lAccessExpression
     ;
 
-// TODO: Must also have "(LPAR methodArgs? RPAR)" in the second line
 lAccessExpression
     : lOtherExpression ( DOT (INITIALIZE  |  IDENTIFIER) |  (LBRACK expression RBRACK))* LPAR {System.out.println("MethodCall");} methodArgs? RPAR secondlAccessExpression?
     | lOtherExpression (DOT (IDENTIFIER | INITIALIZE))*
@@ -261,7 +255,6 @@ secondlAccessExpression
     : (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR | LBRACK expression RBRACK)*
     ;
 
-//TODO: Is "LPAR (methodArgs?) RPAR" RHS needed?
 lOtherExpression
     : IDENTIFIER | SELF | LPAR (methodArgs?) RPAR
     ;
@@ -287,8 +280,8 @@ accessModifier
     : PUBLIC | PRIVATE
     ;
 
-// TODO: Add array literal types
-// TODO: Is Null valid as value?
+
+//Is Null valid as value?
 literal
     : signedIntLiteral
     | boolLiteral
@@ -303,7 +296,7 @@ signedIntLiteral
     : (PLUS {System.out.println("Operator : + ");}| MINUS {System.out.println("Operator : -");})? POSITIVE_INT_LITERAL
     ;
 
-// TODO: What about negtive values?
+
 POSITIVE_INT_LITERAL
     : [1-9] [0-9]*
     | [0]
