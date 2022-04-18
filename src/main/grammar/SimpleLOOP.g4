@@ -276,7 +276,15 @@ lExpression
 
 // TODO: Must also have "(LPAR methodArgs? RPAR)" in the second line
 lAccessExpression
-    : lOtherExpression (DOT (IDENTIFIER | INITIALIZE) | LPAR {System.out.println("MethodCall");} methodArgs? RPAR | LBRACK expression RBRACK)*
+  //  : lOtherExpression (DOT (IDENTIFIER | INITIALIZE) | LPAR {System.out.println("MethodCall");} methodArgs? RPAR | LBRACK expression RBRACK)*
+  //  ;
+    
+    : lOtherExpression ( DOT (INITIALIZE  |  IDENTIFIER) |  (LBRACK expression RBRACK))* LPAR {System.out.println("MethodCall");} methodArgs? RPAR secondlAccessExpression?
+    | lOtherExpression
+    ;
+  
+secondlAccessExpression
+    : (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR | LBRACK expression RBRACK)*
     ;
 
 //TODO: Is "LPAR (methodArgs?) RPAR" RHS needed?
