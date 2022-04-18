@@ -1,16 +1,18 @@
 grammar SimpleLOOP;
 
 simpleLoop
-    : NEWLINE* (declaration NEWLINE+)* (classDec)* (mainClassDec)? (classDec)* EOF
+    : NEWLINE* (declaration NEWLINE+)* (classDec)* EOF
     ;
 
+/*
 mainClassDec
     :CLASS NEWLINE* id=MAIN {System.out.println("ClassDec : " + $id.getText());} (NEWLINE* LCURLYBRACE NEWLINE+ classBody RCURLYBRACE NEWLINE+ | NEWLINE+ (classStatement | methodDeclaration))
     ;
+*/
 
 classDec
-    : CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} (NEWLINE* LCURLYBRACE NEWLINE+ classBody RCURLYBRACE  NEWLINE+ | NEWLINE+ (classStatement | methodDeclaration) NEWLINE+)
-    | CLASS NEWLINE* id=CLASS_IDENTIFIER {System.out.println("ClassDec : " + $id.getText());} LT pid=CLASS_IDENTIFIER {System.out.println("Inheritance : " + $id.getText() + " < " + $pid.getText());}  (NEWLINE* LCURLYBRACE NEWLINE+ classBody RCURLYBRACE  NEWLINE+ | NEWLINE+ (classStatement | methodDeclaration) NEWLINE+)
+    : CLASS NEWLINE* id=(CLASS_IDENTIFIER | MAIN) {System.out.println("ClassDec : " + $id.getText());} (NEWLINE* LCURLYBRACE NEWLINE+ classBody RCURLYBRACE  NEWLINE+ | NEWLINE+ (classStatement | methodDeclaration))
+    | CLASS NEWLINE* id=(CLASS_IDENTIFIER | MAIN) {System.out.println("ClassDec : " + $id.getText());} LT pid=CLASS_IDENTIFIER {System.out.println("Inheritance : " + $id.getText() + " < " + $pid.getText());}  (NEWLINE* LCURLYBRACE NEWLINE+ classBody RCURLYBRACE NEWLINE+ | NEWLINE+ (classStatement | methodDeclaration))
     ;
 
 classBody
@@ -250,7 +252,7 @@ lAccessExpression
     : lOtherExpression ( DOT (INITIALIZE  |  IDENTIFIER) |  (LBRACK expression RBRACK))* LPAR {System.out.println("MethodCall");} methodArgs? RPAR secondlAccessExpression?
     | lOtherExpression (DOT (IDENTIFIER | INITIALIZE))*
     ;
-  
+
 secondlAccessExpression
     : (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR | LBRACK expression RBRACK)*
     ;
@@ -296,12 +298,10 @@ signedIntLiteral
     : (PLUS {System.out.println("Operator : + ");}| MINUS {System.out.println("Operator : -");})? POSITIVE_INT_LITERAL
     ;
 
-
 POSITIVE_INT_LITERAL
     : [1-9] [0-9]*
     | [0]
     ;
-
 
 // tokens
 DOUBLE_SLASH: '//' NEWLINE [ \t]* -> skip;
