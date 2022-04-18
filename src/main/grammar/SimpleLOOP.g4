@@ -51,8 +51,8 @@ methodParamsWithoutDefaultVal
     ;
 
 methodParamsWithDefaultVal
-    : (methodParam ASSIGN otherExpression) COMMA methodParamsWithDefaultVal
-    | methodParam ASSIGN otherExpression
+    : (methodParam ASSIGN otherExpr) COMMA methodParamsWithDefaultVal
+    | methodParam ASSIGN otherExpr
     ;
 
 methodParam
@@ -60,8 +60,8 @@ methodParam
     ;
 
 methodArgs
-    : (expression | IDENTIFIER ASSIGN expression {System.out.println("Operator : =");}) COMMA methodArgs
-    | (expression | IDENTIFIER ASSIGN expression {System.out.println("Operator : =");})
+    : (expr | IDENTIFIER ASSIGN expr {System.out.println("Operator : =");}) COMMA methodArgs
+    | (expr | IDENTIFIER ASSIGN expr {System.out.println("Operator : =");})
     ;
 
 newSetArgs
@@ -70,17 +70,17 @@ newSetArgs
     ;
 
 declaration
-    : type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} ASSIGN expression {System.out.println("Operator : =");} SEMICOLON?
+    : type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} ASSIGN expr {System.out.println("Operator : =");} SEMICOLON?
     | type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} (COMMA id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());})* SEMICOLON?
     ;
 
 classFieldDeclaration
     : accessModifier type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} (COMMA id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());})* SEMICOLON?
-    | accessModifier type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} ASSIGN expression {System.out.println("Operator : =");} SEMICOLON?
+    | accessModifier type id=IDENTIFIER {System.out.println("VarDec : " + $id.getText());} ASSIGN expr {System.out.println("Operator : =");} SEMICOLON?
     ;
 
 assignment
-    : lExpression ASSIGN expression {System.out.println("Operator : =");}
+    : lExpr ASSIGN expr {System.out.println("Operator : =");}
     ;
 
 scope
@@ -92,10 +92,10 @@ nonReturningScope
     ;
 
 nonReturningStatement
-    : lExpression SEMICOLON? NEWLINE+
+    : lExpr SEMICOLON? NEWLINE+
     | block
     | assignment SEMICOLON? NEWLINE+
-    | postUnaryExpression SEMICOLON? NEWLINE+
+    | singlePostExpr SEMICOLON? NEWLINE+
     | funcCallStatement SEMICOLON? NEWLINE+
     | ifStatement
     | elsifStatement
@@ -113,7 +113,7 @@ block
     ;
 
 returnStatement
-    : RETURN {System.out.println("Return");} expression
+    : RETURN {System.out.println("Return");} expr
     | RETURN {System.out.println("Return");}
     ;
 
@@ -123,15 +123,15 @@ methodCallStatement
 
 
 funcCallStatement
-    : PRINT {System.out.println("Built-in : print");} LPAR expression RPAR
+    : PRINT {System.out.println("Built-in : print");} LPAR expr RPAR
     ;
 
 loopStatement
-    : (expression | range) DOT EACH {System.out.println("Loop : each");} DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
+    : (expr | range) DOT EACH {System.out.println("Loop : each");} DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
     ;
 
 range
-    : LPAR expression DOT DOT expression RPAR
+    : LPAR expr DOT DOT expr RPAR
     ;
 
 statementBlock
@@ -140,7 +140,7 @@ statementBlock
     ;
 
 ifStatement
-    : IF {System.out.println("Conditional : if");} expression statementBlock
+    : IF {System.out.println("Conditional : if");} expr statementBlock
     ;
 
 ifStatementBlock
@@ -149,114 +149,114 @@ ifStatementBlock
     ;
 
 elseStatement
-    : IF {System.out.println("Conditional : if");} expression ifStatementBlock ELSE {System.out.println("Conditional : else");} statementBlock
+    : IF {System.out.println("Conditional : if");} expr ifStatementBlock ELSE {System.out.println("Conditional : else");} statementBlock
     ;
 
 elsifStatement
-    : IF {System.out.println("Conditional : if");} expression ifStatementBlock (ELSIF {System.out.println("Conditional : elsif");} expression statementBlock)+ (ELSE {System.out.println("Conditional : else");} statementBlock)?
+    : IF {System.out.println("Conditional : if");} expr ifStatementBlock (ELSIF {System.out.println("Conditional : elsif");} expr statementBlock)+ (ELSE {System.out.println("Conditional : else");} statementBlock)?
     ;
 
 insideIfStatementBlock
-    : expression SEMICOLON? NEWLINE+
+    : expr SEMICOLON? NEWLINE+
     | returnStatement SEMICOLON? NEWLINE+
     | assignment SEMICOLON? NEWLINE+
     | elsifStatement
     | elseStatement
     ;
 
-expression
-    : LPAR expression RPAR
-    | inlineConditionalExpression
+expr
+    : LPAR expr RPAR
+    | inlineConditionalExpr
     ;
 
-inlineConditionalExpression
-    : orExpression inlineConditionalExpressionPrime
+inlineConditionalExpr
+    : orExpr inlineConditionalExprPrime
     ;
 
-inlineConditionalExpressionPrime
-    : (op=QUESTION_MARK expression COLON expression {System.out.println("Operator : ?:");} inlineConditionalExpressionPrime)?
+inlineConditionalExprPrime
+    : (op=QUESTION_MARK expr COLON expr {System.out.println("Operator : ?:");} inlineConditionalExprPrime)?
     ;
 
-orExpression:
-    andExpression (op = OR  andExpression {System.out.println("Operator : " + $op.getText());} )*
-    | andExpression
+orExpr:
+    andExpr (op = OR  andExpr {System.out.println("Operator : " + $op.getText());} )*
+    | andExpr
     ;
 
-andExpression:
-    equalityExpression (op = AND  equalityExpression {System.out.println("Operator : " + $op.getText());})*
-    | equalityExpression
+andExpr:
+    equiExpr (op = AND  equiExpr {System.out.println("Operator : " + $op.getText());})*
+    | equiExpr
     ;
 
-equalityExpression:
-    relationalExpression
-    | relationalExpression (op =  EQUALS {System.out.println("Operator : " + $op.getText());} relationalExpression  )*
+equiExpr:
+    relExpr
+    | relExpr (op =  EQUALS {System.out.println("Operator : " + $op.getText());} relExpr  )*
     ;
 
-relationalExpression:
-    additiveExpression
-    | additiveExpression ((op= GT | op = LT) additiveExpression  {System.out.println("Operator : " + $op.getText());} )*
+relExpr:
+    addExpr
+    | addExpr ((op= GT | op = LT) addExpr  {System.out.println("Operator : " + $op.getText());} )*
     ;
 
-additiveExpression:
-    multiplicativeExpression
-    | multiplicativeExpression ((op=PLUS | op=MINUS)  multiplicativeExpression {System.out.println("Operator : " + $op.getText());})*
+addExpr:
+    multExpr
+    | multExpr ((op=PLUS | op=MINUS)  multExpr {System.out.println("Operator : " + $op.getText());})*
     ;
 
-multiplicativeExpression:
-    preUnaryExpression
-    | preUnaryExpression ((op=MULT | op=DIVIDE)  preUnaryExpression {System.out.println("Operator : " + $op.getText());})*
+multExpr:
+    singlePreExpr
+    | singlePreExpr ((op=MULT | op=DIVIDE)  singlePreExpr {System.out.println("Operator : " + $op.getText());})*
     ;
 
-preUnaryExpression
-    : postUnaryExpression
-    | (op=MINUS | op=EXCLAMATION_MARK) {System.out.println("Operator : " + $op.getText());} preUnaryExpression
+singlePreExpr
+    : singlePostExpr
+    | (op=MINUS | op=EXCLAMATION_MARK) {System.out.println("Operator : " + $op.getText());} singlePreExpr
     ;
 
-postUnaryExpression:
-     (setExpression | selfExpression | newClassExpression | accessExpression)( op=PLUSPLUS {System.out.println("Operator : " + $op.getText());} | op=MINUSMINUS {System.out.println("Operator : " + $op.getText());})?
+singlePostExpr:
+     (setExpr | selfExpr | newClassExpr | accessExpr)( op=PLUSPLUS {System.out.println("Operator : " + $op.getText());} | op=MINUSMINUS {System.out.println("Operator : " + $op.getText());})?
     ;
 
-setExpression
-        : SET (DOT NEW {System.out.println("NEW");} LPAR (newSetArgs? | LPAR newSetArgs RPAR) RPAR) setExpressionPrime
-        | (accessExpression | selfExpression) DOT ((ADD {System.out.println("ADD");} | INCLUDE {System.out.println("INCLUDE");} | DELETE {System.out.println("DELETE");}) LPAR expression RPAR | MERGE LPAR (setExpression) RPAR ) setExpressionPrime
+setExpr
+        : SET (DOT NEW {System.out.println("NEW");} LPAR (newSetArgs? | LPAR newSetArgs RPAR) RPAR) setExprPrime
+        | (accessExpr | selfExpr) DOT ((ADD {System.out.println("ADD");} | INCLUDE {System.out.println("INCLUDE");} | DELETE {System.out.println("DELETE");}) LPAR expr RPAR | MERGE LPAR (setExpr) RPAR ) setExprPrime
         ;
 
-setExpressionPrime
-        : (DOT ((ADD {System.out.println("ADD");} | INCLUDE {System.out.println("INCLUDE");} | DELETE {System.out.println("DELETE");}) LPAR expression RPAR | MERGE LPAR (setExpression) RPAR ) setExpressionPrime)?
+setExprPrime
+        : (DOT ((ADD {System.out.println("ADD");} | INCLUDE {System.out.println("INCLUDE");} | DELETE {System.out.println("DELETE");}) LPAR expr RPAR | MERGE LPAR (setExpr) RPAR ) setExprPrime)?
         ;
 
-selfExpression
-        : SELF (DOT IDENTIFIER (LPAR methodArgs? RPAR | LBRACK expression RBRACK)*)*
+selfExpr
+        : SELF (DOT IDENTIFIER (LPAR methodArgs? RPAR | LBRACK expr RBRACK)*)*
         ;
 
-newClassExpression
+newClassExpr
         : CLASS_IDENTIFIER DOT NEW LPAR methodArgs? RPAR
         ;
 
 
-accessExpression
-        : otherExpression (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR | LBRACK expression RBRACK)*
+accessExpr
+        : otherExpr (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR | LBRACK expr RBRACK)*
         ;
 
 //: Is "LPAR (methodArgs?) RPAR" RHS needed?
-otherExpression
+otherExpr
     : literal | IDENTIFIER  | NULL | LPAR (methodArgs?) RPAR
     ;
 
-lExpression
-    : lAccessExpression
+lExpr
+    : lAccessExpr
     ;
 
-lAccessExpression
-       : lOtherExpression (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR |  (LBRACK expression RBRACK))* DOT (IDENTIFIER | INITIALIZE) LPAR {System.out.println("MethodCall");} methodArgs? RPAR
-       | lOtherExpression (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR | (LBRACK expression RBRACK))* (DOT (IDENTIFIER) | (LBRACK expression RBRACK))?
+lAccessExpr
+       : lOtherExpr (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR |  (LBRACK expr RBRACK))* DOT (IDENTIFIER | INITIALIZE) LPAR {System.out.println("MethodCall");} methodArgs? RPAR
+       | lOtherExpr (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR | (LBRACK expr RBRACK))* (DOT (IDENTIFIER) | (LBRACK expr RBRACK))?
        ;
 
 secondlAccessExpression
-    : (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR | LBRACK expression RBRACK)*
+    : (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR | LBRACK expr RBRACK)*
     ;
 
-lOtherExpression
+lOtherExpr
     : IDENTIFIER | SELF | LPAR (methodArgs?) RPAR
     ;
 
@@ -270,7 +270,7 @@ type
     ;
 
 arrayType
-    : (INT | BOOL | CLASS_IDENTIFIER) (LBRACK (expression) RBRACK)+
+    : (INT | BOOL | CLASS_IDENTIFIER) (LBRACK (expr) RBRACK)+
     ;
 
 fptrType
@@ -373,7 +373,6 @@ MINUSMINUS: '--';
 MULT: '*';
 
 STRAIGHT_SLASH: '|';
-
 
 DIVIDE: '/';
 
