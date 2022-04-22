@@ -1,48 +1,50 @@
 grammar SimpleLOOP;
 
 simpleLoop
-    : NEWLINE* (declaration NEWLINE+)* (classDec)* EOF
+//    : NEWLINE* (declaration NEWLINE*)* (classDec)* EOF
+    : NEWLINE* (declaration NEWLINE* | classDec)* EOF
     ;
 
 /*
 mainClassDec
-    :CLASS NEWLINE* id=MAIN {System.out.println("ClassDec : " + $id.getText());} (NEWLINE* LCURLYBRACE NEWLINE+ classBody RCURLYBRACE NEWLINE+ | NEWLINE+ (classStatement | methodDeclaration))
+    :CLASS NEWLINE* id=MAIN {System.out.println("ClassDec : " + $id.getText());} (NEWLINE* LCURLYBRACE NEWLINE* classBody RCURLYBRACE NEWLINE* | NEWLINE* (classStatement | methodDeclaration))
     ;
 */
 
 classDec
-    : CLASS NEWLINE* id=(CLASS_IDENTIFIER | MAIN) {System.out.println("ClassDec : " + $id.getText());} (NEWLINE* LCURLYBRACE NEWLINE+ classBody RCURLYBRACE  NEWLINE+ | NEWLINE+ (classStatement | methodDeclaration))
-    | CLASS NEWLINE* id=(CLASS_IDENTIFIER | MAIN) {System.out.println("ClassDec : " + $id.getText());} LT pid=CLASS_IDENTIFIER {System.out.println("Inheritance : " + $id.getText() + " < " + $pid.getText());}  (NEWLINE* LCURLYBRACE NEWLINE+ classBody RCURLYBRACE NEWLINE+ | NEWLINE+ (classStatement | methodDeclaration))
+    : CLASS NEWLINE* id=(CLASS_IDENTIFIER | MAIN) {System.out.println("ClassDec : " + $id.getText());} (NEWLINE* LCURLYBRACE NEWLINE* classBody RCURLYBRACE  NEWLINE* | NEWLINE* (classStatement | methodDeclaration | initializeMethodDeclaration))
+    | CLASS NEWLINE* id=(CLASS_IDENTIFIER | MAIN) {System.out.println("ClassDec : " + $id.getText());} LT pid=CLASS_IDENTIFIER {System.out.println("Inheritance : " + $id.getText() + " < " + $pid.getText());}  (NEWLINE* LCURLYBRACE NEWLINE* classBody RCURLYBRACE NEWLINE* | NEWLINE* (classStatement | methodDeclaration | initializeMethodDeclaration))
     ;
 
 classBody
-    : ((classStatement | methodDeclaration)* initializeMethodDeclaration? (classStatement | methodDeclaration)* | NEWLINE*)
+    : ((classStatement | methodDeclaration | initializeMethodDeclaration)* | NEWLINE*)
     ;
 
-
 classStatement
-    : classFieldDeclaration SEMICOLON? NEWLINE+
+    : classFieldDeclaration SEMICOLON? NEWLINE*
     ;
 
 methodDeclaration
-    : accessModifier type id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE+ methodBody RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
-    | accessModifier VOID id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE+ methodBody RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
+    : accessModifier type id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE* methodBody RCURLYBRACE NEWLINE* | NEWLINE* statement)
+    | accessModifier VOID id=IDENTIFIER {System.out.println("MethodDec : " + $id.getText());} LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE* methodBody RCURLYBRACE NEWLINE* | NEWLINE* statement)
     ;
 
 initializeMethodDeclaration
-    : accessModifier INITIALIZE LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE* methodBody RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
+    : accessModifier INITIALIZE LPAR finalmethodParams? RPAR (NEWLINE* LCURLYBRACE NEWLINE* methodBody RCURLYBRACE NEWLINE* | NEWLINE* statement)
     ;
 
 methodBody
-    : (declaration NEWLINE+)+ | (declaration NEWLINE+)* scope
+//    : (declaration NEWLINE*)+ | (declaration NEWLINE*)* scope
+    : (declaration NEWLINE* | scope)*
     ;
 
 returningMethodBody
-    : (declaration NEWLINE+)* nonReturningScope? (returnStatement SEMICOLON? NEWLINE+) scope?
+    : (declaration NEWLINE*)* nonReturningScope? (returnStatement SEMICOLON? NEWLINE*) scope?
     ;
 
 finalmethodParams
     : methodParamsWithoutDefaultVal (COMMA methodParamsWithDefaultVal)?
+    | methodParamsWithDefaultVal
     ;
 
 methodParamsWithoutDefaultVal
@@ -51,8 +53,8 @@ methodParamsWithoutDefaultVal
     ;
 
 methodParamsWithDefaultVal
-    : (methodParam ASSIGN otherExpr) COMMA methodParamsWithDefaultVal
-    | methodParam ASSIGN otherExpr
+    : (methodParam ASSIGN expr) COMMA methodParamsWithDefaultVal
+    | methodParam ASSIGN expr
     ;
 
 methodParam
@@ -65,8 +67,8 @@ methodArgs
     ;
 
 newSetArgs
-    : signedIntLiteral COMMA newSetArgs
-    | signedIntLiteral
+    : methodArgs COMMA methodArgs
+    | methodArgs
     ;
 
 declaration
@@ -80,6 +82,7 @@ classFieldDeclaration
     ;
 
 assignment
+//    : lExpr ASSIGN ((lExpr | IDENTIFIER) ASSIGN)* expr {System.out.println("Operator : =");}
     : lExpr ASSIGN expr {System.out.println("Operator : =");}
     ;
 
@@ -92,11 +95,11 @@ nonReturningScope
     ;
 
 nonReturningStatement
-    : lExpr SEMICOLON? NEWLINE+
+    : lExpr SEMICOLON? NEWLINE*
     | block
-    | assignment SEMICOLON? NEWLINE+
-    | singlePostExpr SEMICOLON? NEWLINE+
-    | funcCallStatement SEMICOLON? NEWLINE+
+    | assignment SEMICOLON? NEWLINE*
+    | singlePostExpr SEMICOLON? NEWLINE*
+    | funcCallStatement SEMICOLON? NEWLINE*
     | ifStatement
     | elsifStatement
     | elseStatement
@@ -105,11 +108,11 @@ nonReturningStatement
 
 statement
     : nonReturningStatement
-    | returnStatement SEMICOLON? NEWLINE+
+    | returnStatement SEMICOLON? NEWLINE*
     ;
 
 block
-    : LCURLYBRACE NEWLINE+ scope? RCURLYBRACE NEWLINE+
+    : LCURLYBRACE NEWLINE* scope? RCURLYBRACE NEWLINE*
     ;
 
 returnStatement
@@ -127,7 +130,7 @@ funcCallStatement
     ;
 
 loopStatement
-    : (expr | range) DOT EACH {System.out.println("Loop : each");} DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE+ scope RCURLYBRACE NEWLINE+ | NEWLINE+ statement)
+    : (expr | range) DOT EACH {System.out.println("Loop : each");} DO STRAIGHT_SLASH IDENTIFIER STRAIGHT_SLASH (LCURLYBRACE NEWLINE* scope RCURLYBRACE NEWLINE* | NEWLINE* statement)
     ;
 
 range
@@ -135,8 +138,8 @@ range
     ;
 
 statementBlock
-    : NEWLINE* LCURLYBRACE NEWLINE+ scope RCURLYBRACE NEWLINE+
-    | NEWLINE+ statement
+    : NEWLINE* LCURLYBRACE NEWLINE* scope RCURLYBRACE NEWLINE*
+    | NEWLINE* statement
     ;
 
 ifStatement
@@ -144,8 +147,8 @@ ifStatement
     ;
 
 ifStatementBlock
-    : NEWLINE* LCURLYBRACE NEWLINE+ scope RCURLYBRACE NEWLINE+
-    | NEWLINE+ insideIfStatementBlock
+    : NEWLINE* LCURLYBRACE NEWLINE* scope RCURLYBRACE NEWLINE*
+    | NEWLINE* insideIfStatementBlock
     ;
 
 elseStatement
@@ -157,16 +160,20 @@ elsifStatement
     ;
 
 insideIfStatementBlock
-    : expr SEMICOLON? NEWLINE+
-    | returnStatement SEMICOLON? NEWLINE+
-    | assignment SEMICOLON? NEWLINE+
+    : lExpr SEMICOLON? NEWLINE*
+    | returnStatement SEMICOLON? NEWLINE*
+    | assignment SEMICOLON? NEWLINE*
     | elsifStatement
     | elseStatement
     ;
 
 expr
     : LPAR expr RPAR
-    | inlineConditionalExpr
+    | assignExpr
+    ;
+
+assignExpr
+    : inlineConditionalExpr (ASSIGN  expr {System.out.println("Operator : =");})?
     ;
 
 inlineConditionalExpr
@@ -179,27 +186,22 @@ inlineConditionalExprPrime
 
 orExpr:
     andExpr (op = OR  andExpr {System.out.println("Operator : " + $op.getText());} )*
-    | andExpr
     ;
 
 andExpr:
     equiExpr (op = AND  equiExpr {System.out.println("Operator : " + $op.getText());})*
-    | equiExpr
     ;
 
 equiExpr:
-    relExpr
-    | relExpr (op =  EQUALS {System.out.println("Operator : " + $op.getText());} relExpr  )*
+    relExpr (op =  EQUALS {System.out.println("Operator : " + $op.getText());} relExpr  )*
     ;
 
 relExpr:
-    addExpr
-    | addExpr ((op= GT | op = LT) addExpr  {System.out.println("Operator : " + $op.getText());} )*
+    addExpr ((op= GT | op = LT) addExpr  {System.out.println("Operator : " + $op.getText());} )*
     ;
 
 addExpr:
-    multExpr
-    | multExpr ((op=PLUS | op=MINUS)  multExpr {System.out.println("Operator : " + $op.getText());})*
+    multExpr ((op=PLUS | op=MINUS)  multExpr {System.out.println("Operator : " + $op.getText());})*
     ;
 
 multExpr:
@@ -209,7 +211,7 @@ multExpr:
 
 singlePreExpr
     : singlePostExpr
-    | (op=MINUS | op=EXCLAMATION_MARK) {System.out.println("Operator : " + $op.getText());} singlePreExpr
+    | (op=MINUS | op=EXCLAMATION_MARK)  singlePreExpr {System.out.println("Operator : " + $op.getText());}
     ;
 
 singlePostExpr:
@@ -218,11 +220,12 @@ singlePostExpr:
 
 setExpr
         : SET (DOT NEW {System.out.println("NEW");} LPAR (newSetArgs? | LPAR newSetArgs RPAR) RPAR) setExprPrime
-        | (accessExpr | selfExpr) DOT ((ADD {System.out.println("ADD");} | INCLUDE {System.out.println("INCLUDE");} | DELETE {System.out.println("DELETE");}) LPAR expr RPAR | MERGE LPAR (setExpr) RPAR ) setExprPrime
+        | (accessExpr | selfExpr) DOT ((ADD {System.out.println("ADD");} | INCLUDE {System.out.println("INCLUDE");} | DELETE {System.out.println("DELETE");}) LPAR expr RPAR | MERGE {System.out.println("MERGE");} LPAR ((setExpr|expr) (COMMA (setExpr|expr))*) RPAR ) setExprPrime
         ;
 
 setExprPrime
-        : (DOT ((ADD {System.out.println("ADD");} | INCLUDE {System.out.println("INCLUDE");} | DELETE {System.out.println("DELETE");}) LPAR expr RPAR | MERGE LPAR (setExpr) RPAR ) setExprPrime)?
+        : (DOT ((ADD {System.out.println("ADD");} | INCLUDE {System.out.println("INCLUDE");} | DELETE {System.out.println("DELETE");}) LPAR expr RPAR | MERGE LPAR ((setExpr|expr) (COMMA (setExpr|expr))*) RPAR ) setExprPrime)?
+        | (LBRACK expr RBRACK)*
         ;
 
 selfExpr
@@ -235,6 +238,7 @@ newClassExpr
 
 
 accessExpr
+//        : otherExpr (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR | LBRACK expr RBRACK)*
         : otherExpr (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR | LBRACK expr RBRACK)*
         ;
 
@@ -248,14 +252,10 @@ lExpr
     ;
 
 lAccessExpr
-       : lOtherExpr LPAR {System.out.println("MethodCall");} methodArgs? RPAR
-       | lOtherExpr (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR |  (LBRACK expr RBRACK))* DOT (IDENTIFIER | INITIALIZE) LPAR {System.out.println("MethodCall");} methodArgs? RPAR
-       | lOtherExpr ((DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR | (LBRACK expr RBRACK))* (DOT (IDENTIFIER) | (LBRACK expr RBRACK)))?
+       : lOtherExpr (DOT (IDENTIFIER | INITIALIZE | CLASS_IDENTIFIER | SELF) | LPAR methodArgs? RPAR |  (LBRACK expr RBRACK))* LPAR {System.out.println("MethodCall");} methodArgs? RPAR
+//       | lOtherExpr (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR |  (LBRACK expr RBRACK))* DOT (IDENTIFIER | INITIALIZE) LPAR {System.out.println("MethodCall");} methodArgs? RPAR
+       | lOtherExpr ((DOT (IDENTIFIER | INITIALIZE | CLASS_IDENTIFIER | SELF) | LPAR methodArgs? RPAR | (LBRACK expr RBRACK))* (DOT (IDENTIFIER|SELF|CLASS_IDENTIFIER) | (LBRACK expr RBRACK)))?
        ;
-
-secondlAccessExpression
-    : (DOT (IDENTIFIER | INITIALIZE) | LPAR methodArgs? RPAR | LBRACK expr RBRACK)*
-    ;
 
 lOtherExpr
     : IDENTIFIER | SELF | LPAR (methodArgs?) RPAR
@@ -263,11 +263,11 @@ lOtherExpr
 
 type
     : arrayType
+    | fptrType
+    | SET LT type GT
     | INT
     | BOOL
     | CLASS_IDENTIFIER
-    | fptrType
-    | SET LT type GT
     ;
 
 arrayType
@@ -304,7 +304,7 @@ POSITIVE_INT_LITERAL
     ;
 
 // tokens
-DOUBLE_SLASH: '//' NEWLINE [ \t]* -> skip;
+DOUBLE_SLASH: '//' (NEWLINE | [ \t])* -> skip;
 CLASS: 'class';
 
 INT: 'int';
@@ -357,6 +357,8 @@ EQUALS: '==';
 
 ASSIGN: '=';
 
+ARROW: '->';
+
 PLUS: '+';
 
 MINUS: '-';
@@ -381,7 +383,6 @@ SHARP: '#';
 
 DOT: '.';
 
-ARROW: '->';
 
 LT: '<';
 
@@ -398,7 +399,8 @@ CLASS_IDENTIFIER: [A-Z] [a-zA-Z0-9_]*;
 
 NEWLINE: [\n\r];
 
-SCOPE_COMMENT: '=begin' NEWLINE .*? NEWLINE [ \t]* '=end' -> skip;
-INLINE_COMMENT: '#' .*? NEWLINE -> skip;
+
+SCOPE_COMMENT: '=begin' .*? '=end' -> skip;
+INLINE_COMMENT: '#' .*? (NEWLINE | EOF) -> skip;
 
 WS: [ \t] -> skip;
