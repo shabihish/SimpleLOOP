@@ -14,8 +14,10 @@ import main.ast.nodes.statement.*;
 import main.ast.nodes.statement.set.*;
 import main.visitor.*;
 
+import javax.swing.plaf.nimbus.State;
+
 public class ASTTreePrinter extends Visitor<Void> {
-    public void messagePrinter(int line, String message){
+    public void messagePrinter(int line, String message) {
         System.out.println("Line " + line + ": " + message);
     }
 
@@ -24,193 +26,299 @@ public class ASTTreePrinter extends Visitor<Void> {
         messagePrinter(program.getLine(), program.toString());
         for (VariableDeclaration variableDeclaration : program.getGlobalVariables())
             variableDeclaration.accept(this);
-        for (ClassDeclaration classDeclaration: program.getClasses())
+        for (ClassDeclaration classDeclaration : program.getClasses())
             classDeclaration.accept(this);
         return null;
     }
+
+    // Overridden
     @Override
     public Void visit(ClassDeclaration classDeclaration) {
-        //todo
+        messagePrinter(classDeclaration.getLine(), classDeclaration.toString());
+
+        classDeclaration.getClassName().accept(this);
+        classDeclaration.getParentClassName().accept(this);
+
+        for (FieldDeclaration field : classDeclaration.getFields())
+            field.accept(this);
+
+        classDeclaration.getConstructor().accept(this);
+
+        for (MethodDeclaration method : classDeclaration.getMethods())
+            method.accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(ConstructorDeclaration constructorDeclaration) {
-        //todo
+        messagePrinter(constructorDeclaration.getLine(), constructorDeclaration.toString());
+        constructorDeclaration.accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(MethodDeclaration methodDeclaration) {
-        //todo
+        messagePrinter(methodDeclaration.getLine(), methodDeclaration.toString());
+        methodDeclaration.getMethodName().accept(this);
+        for (VariableDeclaration arg : methodDeclaration.getArgs())
+            arg.accept(this);
+        for (Statement stmt : methodDeclaration.getBody())
+            stmt.accept(this);
         return null;
     }
 
+    // Overridden
+    // Erroneous in g4 code
     @Override
     public Void visit(FieldDeclaration fieldDeclaration) {
-        //todo
+        messagePrinter(fieldDeclaration.getLine(), fieldDeclaration.toString());
+        fieldDeclaration.getVarDeclaration().accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(VariableDeclaration varDeclaration) {
-        //todo
+        messagePrinter(varDeclaration.getLine(), varDeclaration.toString());
+        varDeclaration.getVarName().accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(AssignmentStmt assignmentStmt) {
-        //todo
+        messagePrinter(assignmentStmt.getLine(), assignmentStmt.toString());
+        assignmentStmt.getlValue().accept(this);
+        assignmentStmt.getrValue().accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(BlockStmt blockStmt) {
-        //todo
+        messagePrinter(blockStmt.getLine(), blockStmt.toString());
+        for (Statement stmt : blockStmt.getStatements())
+            stmt.accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(ConditionalStmt conditionalStmt) {
-        //todo
+        messagePrinter(conditionalStmt.getLine(), conditionalStmt.toString());
+        conditionalStmt.getCondition().accept(this);
+        conditionalStmt.getThenBody().accept(this);
+        if (conditionalStmt.getElseBody() != null)
+            conditionalStmt.getElseBody().accept(this);
+        for (ElsifStmt elsifStmt : conditionalStmt.getElsif())
+            elsifStmt.accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(ElsifStmt elsifStmt) {
-        //todo
+        messagePrinter(elsifStmt.getLine(), elsifStmt.toString());
+        elsifStmt.getCondition().accept(this);
+        elsifStmt.getThenBody().accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(MethodCallStmt methodCallStmt) {
-        //todo
+        messagePrinter(methodCallStmt.getLine(), methodCallStmt.toString());
+        methodCallStmt.getMethodCall().accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(PrintStmt print) {
-        //todo
+        messagePrinter(print.getLine(), print.toString());
+        print.getArg().accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(ReturnStmt returnStmt) {
-        //todo
+        messagePrinter(returnStmt.getLine(), returnStmt.toString());
+        if (returnStmt.getReturnedExpr() != null)
+            returnStmt.getReturnedExpr().accept(this);
         return null;
     }
 
+    // Overridden
+    // TODO: Needs a closer look
     @Override
     public Void visit(EachStmt eachStmt) {
-        //todo
+        messagePrinter(eachStmt.getLine(), eachStmt.toString());
+        eachStmt.getList().accept(this);
+        eachStmt.getVariable().accept(this);
+        eachStmt.getBody().accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(BinaryExpression binaryExpression) {
-        //todo
+        messagePrinter(binaryExpression.getLine(), binaryExpression.toString());
+        binaryExpression.getFirstOperand().accept(this);
+        binaryExpression.getSecondOperand().accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(UnaryExpression unaryExpression) {
-        //todo
+        messagePrinter(unaryExpression.getLine(), unaryExpression.toString());
+        unaryExpression.getOperand().accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(TernaryExpression ternaryExpression) {
-        //todo
+        messagePrinter(ternaryExpression.getLine(), ternaryExpression.toString());
+        ternaryExpression.getCondition().accept(this);
+        ternaryExpression.getTrueExpression().accept(this);
+        ternaryExpression.getFalseExpression().accept(this);
         return null;
     }
 
+    // TODO: Check if the order of the accept statements is correct
+    // Overridden
     @Override
     public Void visit(ObjectMemberAccess objectOrListMemberAccess) {
-        //todo
+        messagePrinter(objectOrListMemberAccess.getLine(), objectOrListMemberAccess.toString());
+        objectOrListMemberAccess.getInstance().accept(this);
+        objectOrListMemberAccess.getMemberName().accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(Identifier identifier) {
-        //todo
+        messagePrinter(identifier.getLine(), identifier.toString());
         return null;
     }
 
+    // TODO: Check if the order of the accept statements is correct
+    // Overridden
     @Override
     public Void visit(ArrayAccessByIndex arrayAccessByIndex) {
-        //todo
+        messagePrinter(arrayAccessByIndex.getLine(), arrayAccessByIndex.toString());
+        arrayAccessByIndex.getInstance().accept(this);
+        arrayAccessByIndex.getIndex().accept(this);
         return null;
     }
 
+    // TODO: Check if the order of the accept statements is correct
+    // Overridden
     @Override
     public Void visit(MethodCall methodCall) {
-        //todo
+        messagePrinter(methodCall.getLine(), methodCall.toString());
+        methodCall.getInstance().accept(this);
+        for (Expression arg : methodCall.getArgs())
+            arg.accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(NewClassInstance newClassInstance) {
-        //todo
+        messagePrinter(newClassInstance.getLine(), newClassInstance.toString());
+        for (Expression arg : newClassInstance.getArgs())
+            arg.accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(SelfClass selfClass) {
-        //todo
+        messagePrinter(selfClass.getLine(), selfClass.toString());
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(NullValue nullValue) {
-        //todo
+        messagePrinter(nullValue.getLine(), nullValue.toString());
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(IntValue intValue) {
-        //todo
+        messagePrinter(intValue.getLine(), intValue.toString());
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(BoolValue boolValue) {
-        //todo
+        messagePrinter(boolValue.getLine(), boolValue.toString());
         return null;
     }
 
+    // TODO: Check if the order of the accept statements is correct
+    // Overridden
     @Override
     public Void visit(SetInclude setAdd) {
-        //todo
+        messagePrinter(setAdd.getLine(), setAdd.toString());
+        setAdd.getSetArg().accept(this);
+        setAdd.getElementArg().accept(this);
         return null;
     }
 
+
+    // Overridden
     @Override
     public Void visit(SetValue setValue) {
-        //todo
+        messagePrinter(setValue.getLine(), setValue.toString());
+        for (IntValue val: setValue.getElements())
+            val.accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(SetNew setMerge) {
-        //todo
+        messagePrinter(setMerge.getLine(), setMerge.toString());
+        for (Expression arg: setMerge.getArgs())
+            arg.accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(SetDelete setDelete) {
-        //todo
+        messagePrinter(setDelete.getLine(), setDelete.toString());
+        setDelete.getSetArg().accept(this);
+        setDelete.getElementArg().accept(this);
         return null;
     }
 
+    // Overridden
     @Override
     public Void visit(SetMerge setAdd) {
-        //todo
+        messagePrinter(setAdd.getLine(), setAdd.toString());
+        setAdd.getSetArg().accept(this);
+        for (Expression arg: setAdd.getElementArgs())
+            arg.accept(this);
         return null;
     }
 
+    // TODO: Check if the order of the accept statements is correct
+    // Overridden
     @Override
     public Void visit(RangeExpression rangeExpression) {
-        //todo
+        messagePrinter(rangeExpression.getLine(), rangeExpression.toString());
+        rangeExpression.getLeftExpression().accept(this);
+        rangeExpression.getRightExpression().accept(this);
         return null;
     }
 }
