@@ -17,7 +17,7 @@ public abstract class Node {
     }
 
     public void addError(CompileError e) {
-        if(Node.isCatchErrorsActive) {
+        if (Node.isCatchErrorsActive) {
             this.errors.add(e);
         }
     }
