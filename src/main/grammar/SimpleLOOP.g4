@@ -193,7 +193,7 @@ andExpr:
     ;
 
 equiExpr:
-    relExpr (op =  EQUALS {System.out.println("Operator : " + $op.getText());} relExpr  )*
+    relExpr (op =  EQUALS {System.out.println("Operator : " + $op.getText());} expr )?
     ;
 
 relExpr:
