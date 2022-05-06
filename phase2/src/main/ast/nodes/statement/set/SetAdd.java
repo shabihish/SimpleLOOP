@@ -2,7 +2,7 @@ package main.ast.nodes.statement.set;
 
 import main.ast.nodes.expression.Expression;
 import main.ast.nodes.statement.Statement;
-import main.visitor.IVisitor;
+import main.visitor.*;
 
 // line -> ADD
 public class SetAdd extends Statement {

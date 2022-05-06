@@ -1,14 +1,15 @@
 package main.ast.types.array;
 
+import main.ast.nodes.expression.Expression;
 import main.ast.types.Type;
 
 import java.util.ArrayList;
 
 public class ArrayType extends Type {
     private Type elementType;
-    private ArrayList<Integer> dimensions;
+    private ArrayList<Expression> dimensions;
 
-    public ArrayType(Type elementType, ArrayList<Integer> dimensions) {
+    public ArrayType(Type elementType, ArrayList<Expression> dimensions) {
         this.elementType = elementType;
         this.dimensions = dimensions;
     }
@@ -16,13 +17,13 @@ public class ArrayType extends Type {
     public Type getType() {
         return elementType;
     }
-    public ArrayList<Integer> getDimensions() {
+    public ArrayList<Expression> getDimensions() {
         return dimensions;
     }
     public void setType(Type elementType) {
         this.elementType = elementType;
     }
-    public void setDimensions(ArrayList<Integer> dimensions) {
+    public void setDimensions(ArrayList<Expression> dimensions) {
         this.dimensions = dimensions;
     }
 
