@@ -1,7 +1,7 @@
 # Intelij files
 .idea
 *.iml
-
+**/parsers/**
 #Internal files
 out
 *.txt
