@@ -35,7 +35,6 @@ import main.symbolTable.items.MethodSymbolTableItem;
 import main.symbolTable.items.FieldSymbolTableItem;
 import main.symbolTable.items.LocalVariableSymbolTableItem;
 
-
 public class NameChecker extends Visitor<Void> {
     private String currentClassName;
     private Graph<String> classHierarchy;
@@ -58,6 +57,9 @@ public class NameChecker extends Visitor<Void> {
     @Override
     public Void visit(Program program) {
         this.root = program;
+        for(VariableDeclaration variableDeclaration : program.getGlobalVariables()) {
+            variableDeclaration.accept(this);
+        }
         for(ClassDeclaration classDeclaration : program.getClasses()) {
             this.currentClassName = classDeclaration.getClassName().getName();
             classDeclaration.accept(this);
@@ -97,16 +99,17 @@ public class NameChecker extends Visitor<Void> {
             try {
                 SymbolTable classSymbolTable = this.getCurrentClassSymbolTable();
                 classSymbolTable.getItem(MethodSymbolTableItem.START_KEY + methodDeclaration.getMethodName().getName(), false);
-                MethodRedefinition exception = new MethodRedefinition(methodDeclaration.getLine() ,methodDeclaration.toString());
+                MethodRedefinition exception = new MethodRedefinition(methodDeclaration.getLine() ,methodDeclaration.getMethodName().getName());
                 methodDeclaration.addError(exception);
             } catch (ItemNotFoundException ignored) {
             }
         }
+
         boolean errored = false;
         try {
             SymbolTable classSymbolTable = this.getCurrentClassSymbolTable();
             classSymbolTable.getItem(FieldSymbolTableItem.START_KEY + methodDeclaration.getMethodName().getName(), true);
-            MethodNameConflictWithField exception = new MethodNameConflictWithField(methodDeclaration.getLine() , methodDeclaration.toString());
+            MethodNameConflictWithField exception = new MethodNameConflictWithField(methodDeclaration.getLine() , methodDeclaration.getMethodName().getName());
             methodDeclaration.addError(exception);
             errored = true;
         } catch (ItemNotFoundException ignored) {
@@ -119,7 +122,7 @@ public class NameChecker extends Visitor<Void> {
                         ClassSymbolTableItem childSymbolTableItem = (ClassSymbolTableItem) SymbolTable.root.getItem(ClassSymbolTableItem.START_KEY + childName, true);
                         SymbolTable childSymbolTable = childSymbolTableItem.getClassSymbolTable();
                         childSymbolTable.getItem(FieldSymbolTableItem.START_KEY + methodDeclaration.getMethodName().getName(), true);
-                        MethodNameConflictWithField exception = new MethodNameConflictWithField(methodDeclaration.getLine() , methodDeclaration.toString());
+                        MethodNameConflictWithField exception = new MethodNameConflictWithField(methodDeclaration.getLine() , methodDeclaration.getMethodName().getName());
                         methodDeclaration.addError(exception);
                         break;
                     } catch (ItemNotFoundException ignored) {
@@ -135,7 +138,7 @@ public class NameChecker extends Visitor<Void> {
             try {
                 SymbolTable classSymbolTable = this.getCurrentClassSymbolTable();
                 classSymbolTable.getItem(FieldSymbolTableItem.START_KEY + fieldDeclaration.getVarDeclaration().getVarName().getName(), false);
-                FieldRedefinition exception = new FieldRedefinition(fieldDeclaration.getLine(), fieldDeclaration.toString());
+                FieldRedefinition exception = new FieldRedefinition(fieldDeclaration.getLine(), fieldDeclaration.getVarDeclaration().getVarName().getName());
                 fieldDeclaration.addError(exception);
             } catch (ItemNotFoundException ignored) {
             }

@@ -6,5 +6,4 @@ public class ClassInCyclicInheritance extends CompileError {
     public ClassInCyclicInheritance(int line, String className) {
         super(line, "Class " + className + " is in an inheritance cycle");
     }
-
 }

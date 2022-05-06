@@ -29,8 +29,10 @@ program returns[Program programRet]:
      $programRet.setLine(line);}
     (v = varDecStatement NEWLINE+
     {
-        for (VariableDeclaration varDec: $v.vardDecStatementRet)
+        for (VariableDeclaration varDec: $v.vardDecStatementRet){
+            varDec.setAsGlobal();
             $programRet.addGlobalVariable(varDec);
+        }
     })*
     (c = classDeclaration NEWLINE+ {$programRet.addClass($c.classDeclarationRet);})*;
 

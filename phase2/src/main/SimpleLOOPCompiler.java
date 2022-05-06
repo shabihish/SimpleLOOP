@@ -73,6 +73,7 @@
 
 package main;
 
+import main.visitor.ErrorReporter;
 import main.visitor.name.ASTTreePrinter;
 import main.visitor.name.NameAnalyzer;
 import main.visitor.name.NameCollector;
@@ -90,10 +91,15 @@ public class SimpleLOOPCompiler {
         SimpleLOOPParser simpleLOOPParser = new SimpleLOOPParser(tokenStream);
 
         Program program = simpleLOOPParser.simpleLOOP().simpleLOOPProgram;
+        NameAnalyzer nameAnalyzer = new NameAnalyzer(program);
+        nameAnalyzer.analyze();
+//        if (!program.hasError()) {
+//            ASTTreePrinter astTreePrinter = new ASTTreePrinter();
+//            astTreePrinter.visit(program);
+//        }
 
-
-        ASTTreePrinter astTreePrinter = new ASTTreePrinter();
-        astTreePrinter.visit(program);
+        ErrorReporter errorReporter = new ErrorReporter();
+        errorReporter.visit(program);
 
 //        NameCollector nameCollector = new NameCollector();
 //        nameCollector.visit(program);
@@ -105,4 +111,3 @@ public class SimpleLOOPCompiler {
 //            astTreePrinter.visit(program);
     }
 }
-

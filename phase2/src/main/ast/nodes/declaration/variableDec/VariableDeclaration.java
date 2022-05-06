@@ -9,10 +9,20 @@ import main.visitor.IVisitor;
 public class VariableDeclaration extends Declaration {
     private Identifier varName;
     private Type type;
+    private boolean isGlobal;
 
     public VariableDeclaration(Identifier varName, Type type) {
         this.varName = varName;
         this.type = type;
+        this.isGlobal = false;
+    }
+
+    public boolean isGlobal(){
+        return isGlobal;
+    }
+
+    public void setAsGlobal(){
+        isGlobal = true;
     }
 
     public Identifier getVarName() {
@@ -40,6 +50,4 @@ public class VariableDeclaration extends Declaration {
     public <T> T accept(IVisitor<T> visitor) {
         return visitor.visit(this);
     }
-
-
 }
