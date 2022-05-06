@@ -94,12 +94,13 @@ public class SimpleLOOPCompiler {
         NameAnalyzer nameAnalyzer = new NameAnalyzer(program);
         nameAnalyzer.analyze();
 //        if (!program.hasError()) {
-//            ASTTreePrinter astTreePrinter = new ASTTreePrinter();
-//            astTreePrinter.visit(program);
 //        }
 
         ErrorReporter errorReporter = new ErrorReporter();
-        errorReporter.visit(program);
+        if(errorReporter.visit(program)==0){
+            ASTTreePrinter astTreePrinter = new ASTTreePrinter();
+            astTreePrinter.visit(program);
+        }
 
 //        NameCollector nameCollector = new NameCollector();
 //        nameCollector.visit(program);
