@@ -44,7 +44,7 @@ constructor returns [ConstructDeclaration constructorRet]:
        args = methodArgsDec {$constructorRet.setArgs($args.methodArgsDecRet);}
        m = methodBody
         { $constructorRet.setBody($m.methodBodyRet);
-          $constructorRet.setLocalVars($m.localVars)
+          $constructorRet.setLocalVars($m.localVars);
         };
 
 //todo
@@ -215,9 +215,9 @@ mergeStatement returns [SetMerge mergeStatementRet] locals[ArrayList<Expression>
     e1 = expression DOT l = MERGE LPAR e2 = orExpression
     { $setarg = $e1.exprRet;
       $line = $l.getLine();
-      $elementargs.add($e2.orExpressionRet)
+      $elementargs.add($e2.orExpressionRet);
     }
-    (COMMA e3 = orExpression {$elementargs.add($e3.orExpressionRet)}
+    (COMMA e3 = orExpression {$elementargs.add($e3.orExpressionRet);}
     )* RPAR
     {$mergeStatementRet = new SetMerge($setarg,$elementargs );
      $mergeStatementRet.setLine($line);
@@ -253,7 +253,7 @@ varDecStatement returns [ArrayList<VariableDeclaration> vardDecStatementRet]:
 //correct_
 ifStatement returns [ConditionalStmt ifStatementRet]:
     l = IF c = condition b = body
-     { $ifStatementRet = new ConditionalStmt($c.conditionRet , $b.bodyRet)
+     { $ifStatementRet = new ConditionalStmt($c.conditionRet , $b.bodyRet);
        $ifStatementRet.setLine($l.getLine());}
     ( e1 = elsifStatement {$ifStatementRet.addElsif($e1.elsifStatementRet);})*
     ( e2 = elseStatement {$ifStatementRet.setElseBody($e2.elseStatementRet);})?;
@@ -278,7 +278,7 @@ condition returns [Expression conditionRet]:
 //done
 //correct
 elseStatement returns [Statement elseStatementRet]:
-    NEWLINE* ELSE b = body {$elseStatementRet = $b.bodyRet};
+    NEWLINE* ELSE b = body {$elseStatementRet = $b.bodyRet;};
 
 //todo
 //done
@@ -321,7 +321,7 @@ loopStatement returns [EachStmt loopStatementRet]:
     ((accessExpression) | (LPAR le=expression DOT DOT re=expression RPAR
     {}
     ))DOT l=EACH DO BAR id = identifier BAR b = body
-    { var list = new RangeExpression(le, re)
+    { var list = new RangeExpression(le, re);
       $loopStatementRet = new EachStmt($id.idRet, list);
       $loopStatementRet.setBody($b.bodyRet);
       $loopStatementRet.setLine($l.getLine());
@@ -490,7 +490,7 @@ otherExpression returns [Expression otherExpressionRet]:
     |e3 = value {$otherExpressionRet = $e3.valueRet;}
     |e4 = identifier {$otherExpressionRet = $e4.idRet;}
     |e5 = setNew {$otherExpressionRet = $e5.setNewRet;}
-    | LPAR e6 = expression RPAR {$otherExpressionRet = $e6.exprRet}
+    | LPAR e6 = expression RPAR {$otherExpressionRet = $e6.exprRet;}
     ;
 
 //todo
