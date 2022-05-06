@@ -112,13 +112,13 @@ public class NameCollector extends Visitor<Void> {
                 LocalVarRedefinition exception = new LocalVarRedefinition(varDeclaration.getLine(), varDeclaration.getVarName().getName());
                 varDeclaration.addError(exception);
             }
-//            try {
-//                GlobalVariableSymbolTableItem globalVariableSymbolTableItem = new GlobalVariableSymbolTableItem(varDeclaration);
-//                SymbolTable.top.getItem(globalVariableSymbolTableItem.getKey(), true);
-//            } catch (ItemNotFoundException e) {
-//                LocalVarConflictWithGlobalVar exception = new LocalVarConflictWithGlobalVar(varDeclaration.getLine(), varDeclaration.getVarName().getName());
-//                varDeclaration.addError(exception);
-//            }
+            try {
+                GlobalVariableSymbolTableItem globalVariableSymbolTableItem = new GlobalVariableSymbolTableItem(varDeclaration);
+                SymbolTable.top.getItem(globalVariableSymbolTableItem.getKey(), true);
+                LocalVarConflictWithGlobalVar exception = new LocalVarConflictWithGlobalVar(varDeclaration.getLine(), varDeclaration.getVarName().getName());
+                varDeclaration.addError(exception);
+            } catch (ItemNotFoundException ignored) {
+            }
             return null;
         }else{
             try {

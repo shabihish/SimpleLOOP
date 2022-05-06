@@ -71,7 +71,7 @@ public class NameChecker extends Visitor<Void> {
     public Void visit(ClassDeclaration classDeclaration) {
         if(classDeclaration.getParentClassName() != null) {
             if (this.classHierarchy.isSecondNodeAncestorOf(classDeclaration.getParentClassName().getName(), classDeclaration.getClassName().getName())) {
-                ClassInCyclicInheritance exception = new ClassInCyclicInheritance(classDeclaration.getLine() , classDeclaration.toString());
+                ClassInCyclicInheritance exception = new ClassInCyclicInheritance(classDeclaration.getLine() , classDeclaration.getClassName().getName());
                 classDeclaration.addError(exception);
             }
         }
