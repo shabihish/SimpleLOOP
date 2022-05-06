@@ -67,7 +67,7 @@ classDeclaration returns [ClassDeclaration classDeclarationRet]:
            {
                 $classDeclarationRet.setConstructor((ConstructorDeclaration) field);
            }
-           if(field instanceof MethodDeclaration)
+           if(field instanceof MethodDeclaration && !(field instanceof ConstructorDeclaration))
            {
                 $classDeclarationRet.addMethod((MethodDeclaration) field);
            }
@@ -236,7 +236,7 @@ deleteStatement returns [SetDelete deleteStatementRet]:
 //done
 //correct
 varDecStatement returns [ArrayList<VariableDeclaration> vardDecStatementRet]:
-    {$vardDecStatementRet = new ArrayList<>(); }
+    {$vardDecStatementRet = new ArrayList<>();}
     t = type id1 = identifier
      { var newvar = new VariableDeclaration($id1.idRet, $t.typeRet);
        newvar.setLine($id1.idRet.getLine());
@@ -289,7 +289,7 @@ printStatement returns [PrintStmt printStatementRet]:
     { $printStatementRet = new PrintStmt($expr.exprRet);
       $printStatementRet.setLine($l.getLine());};
 
-//todo
+//todo: Needs a line to be set
 //dont know what to do with inc and dec
 methodCallStmt returns [MethodCallStmt methodCallStmtRet] locals [Expression instance, MethodCall expr]:
     e1 = accessExpression{$instance = $e1.exprRet;}
@@ -318,13 +318,14 @@ assignmentStatement returns [AssignmentStmt assignmentStatementRet]:
     ;
 
 //todo
-loopStatement returns [EachStmt loopStatementRet] locals [Expression le, Expression re]:
-    ((accessExpression) | (LPAR lex = expression DOT DOT rex = expression RPAR
-    {$le = $lex.exprRet;
-     $re = $rex.exprRet;}
+loopStatement returns [EachStmt loopStatementRet] locals [Expression list]:
+    ((aExpr = accessExpression
+    {$list = $aExpr.exprRet;}
+    ) | (LPAR lex = expression DOT DOT rex = expression RPAR
+    {$list = new RangeExpression($lex.exprRet, $rex.exprRet);}
     ))DOT l=EACH DO BAR id = identifier BAR b = body
-    { var list = new RangeExpression($le, $re);
-      $loopStatementRet = new EachStmt($id.idRet, list);
+    {
+      $loopStatementRet = new EachStmt($id.idRet, $list);
       $loopStatementRet.setBody($b.bodyRet);
       $loopStatementRet.setLine($l.getLine());
     };
@@ -465,17 +466,23 @@ postUnaryExpression returns [Expression exprRet] locals[UnaryOperator op, int li
       $exprRet.setLine($op2.getLine());}
       ))?;
 
-//todo
+//todo: Check correctness of returned class types
+//todo: Does initialize need a different printing procedere in place?
+//todo: "NEW" return value needs a look
 //correct_
 accessExpression returns [Expression exprRet]:
     e1 = otherExpression {$exprRet = $e1.otherExpressionRet;}
-    ((LPAR m = methodArgs {$exprRet = new MethodCall($exprRet, $m.methodArgsRet); }
+    ((lpar=LPAR m = methodArgs
+    {$exprRet = new MethodCall($exprRet, $m.methodArgsRet);
+    $exprRet.setLine($lpar.getLine());}
      RPAR) | (DOT ( id = identifier
-     { $exprRet = new ArrayAccessByIndex($exprRet,$id.idRet);
+     { $exprRet = new ObjectMemberAccess($exprRet,$id.idRet);
        $exprRet.setLine($id.idRet.getLine());
-     }| NEW | INITIALIZE)))*
+     }| nw=NEW
+     {$exprRet = new NewClassInstance(new ClassType((Identifier)$exprRet));
+     $exprRet.setLine($nw.getLine());} | INITIALIZE)))*
     ((DOT (id = identifier
-     { $exprRet = new ArrayAccessByIndex($exprRet,$id.idRet);
+     { $exprRet = new ObjectMemberAccess($exprRet,$id.idRet);
      $exprRet.setLine($id.idRet.getLine());
      })) | (l = LBRACK e = expression
      { $exprRet = new ArrayAccessByIndex($exprRet,$e.exprRet);
@@ -496,7 +503,7 @@ otherExpression returns [Expression otherExpressionRet]:
     | LPAR e6 = expression RPAR {$otherExpressionRet = $e6.exprRet;}
     ;
 
-//todo
+//todo: Needs a check
 //done
 //correct
 setNew returns [Expression setNewRet] locals[ArrayList<Expression> args]:
@@ -528,14 +535,16 @@ boolValue returns [BoolValue boolValueRet]:
 //todo
 //correct
 class_identifier returns [Identifier idRet]:
-    c  = CLASS_IDENTIFIER {$idRet = new Identifier($c.text);};
+    c  = CLASS_IDENTIFIER
+    {$idRet = new Identifier($c.text);
+    $idRet.setLine($c.getLine());};
 
 //todo
 //done
 //correct
 identifier returns [Identifier idRet, int line]:
     id = IDENTIFIER
-     {$idRet = new Identifier($id.text);
+        {$idRet = new Identifier($id.text);
          $idRet.setLine($id.getLine());
          $line = $id.getLine();}
     ;

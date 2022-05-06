@@ -31,7 +31,7 @@ public class MethodDeclaration extends Declaration {
     }
 
     public Identifier getMethodName() {
-        return new Identifier("initialize");
+        return methodName;
     }
 
     public void setMethodName(Identifier methodName) {

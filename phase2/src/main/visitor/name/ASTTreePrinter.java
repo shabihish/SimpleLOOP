@@ -14,8 +14,6 @@ import main.ast.nodes.statement.*;
 import main.ast.nodes.statement.set.*;
 import main.visitor.*;
 
-import javax.swing.plaf.nimbus.State;
-
 public class ASTTreePrinter extends Visitor<Void> {
     public void messagePrinter(int line, String message) {
         System.out.println("Line " + line + ": " + message);
@@ -37,12 +35,14 @@ public class ASTTreePrinter extends Visitor<Void> {
         messagePrinter(classDeclaration.getLine(), classDeclaration.toString());
 
         classDeclaration.getClassName().accept(this);
-        classDeclaration.getParentClassName().accept(this);
+        if (classDeclaration.getParentClassName() != null)
+            classDeclaration.getParentClassName().accept(this);
 
         for (FieldDeclaration field : classDeclaration.getFields())
             field.accept(this);
 
-        classDeclaration.getConstructor().accept(this);
+        if (classDeclaration.getConstructor() != null)
+            classDeclaration.getConstructor().accept(this);
 
         for (MethodDeclaration method : classDeclaration.getMethods())
             method.accept(this);
@@ -53,7 +53,12 @@ public class ASTTreePrinter extends Visitor<Void> {
     @Override
     public Void visit(ConstructorDeclaration constructorDeclaration) {
         messagePrinter(constructorDeclaration.getLine(), constructorDeclaration.toString());
-        constructorDeclaration.accept(this);
+        for (VariableDeclaration arg : constructorDeclaration.getArgs())
+            arg.accept(this);
+        for (VariableDeclaration arg : constructorDeclaration.getLocalVars())
+            arg.accept(this);
+        for (Statement stmt : constructorDeclaration.getBody())
+            stmt.accept(this);
         return null;
     }
 
@@ -63,6 +68,8 @@ public class ASTTreePrinter extends Visitor<Void> {
         messagePrinter(methodDeclaration.getLine(), methodDeclaration.toString());
         methodDeclaration.getMethodName().accept(this);
         for (VariableDeclaration arg : methodDeclaration.getArgs())
+            arg.accept(this);
+        for (VariableDeclaration arg : methodDeclaration.getLocalVars())
             arg.accept(this);
         for (Statement stmt : methodDeclaration.getBody())
             stmt.accept(this);
@@ -153,11 +160,12 @@ public class ASTTreePrinter extends Visitor<Void> {
 
     // Overridden
     // TODO: Needs a closer look
+    // TODO: Is accepting the variable also a need
     @Override
     public Void visit(EachStmt eachStmt) {
         messagePrinter(eachStmt.getLine(), eachStmt.toString());
-        eachStmt.getList().accept(this);
         eachStmt.getVariable().accept(this);
+        eachStmt.getList().accept(this);
         eachStmt.getBody().accept(this);
         return null;
     }
@@ -279,7 +287,7 @@ public class ASTTreePrinter extends Visitor<Void> {
     @Override
     public Void visit(SetValue setValue) {
         messagePrinter(setValue.getLine(), setValue.toString());
-        for (IntValue val: setValue.getElements())
+        for (IntValue val : setValue.getElements())
             val.accept(this);
         return null;
     }
@@ -288,7 +296,7 @@ public class ASTTreePrinter extends Visitor<Void> {
     @Override
     public Void visit(SetNew setMerge) {
         messagePrinter(setMerge.getLine(), setMerge.toString());
-        for (Expression arg: setMerge.getArgs())
+        for (Expression arg : setMerge.getArgs())
             arg.accept(this);
         return null;
     }
@@ -307,7 +315,7 @@ public class ASTTreePrinter extends Visitor<Void> {
     public Void visit(SetMerge setAdd) {
         messagePrinter(setAdd.getLine(), setAdd.toString());
         setAdd.getSetArg().accept(this);
-        for (Expression arg: setAdd.getElementArgs())
+        for (Expression arg : setAdd.getElementArgs())
             arg.accept(this);
         return null;
     }

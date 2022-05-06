@@ -73,10 +73,15 @@
 
 package main;
 
+import main.visitor.name.ASTTreePrinter;
+import main.visitor.name.NameAnalyzer;
+import main.visitor.name.NameCollector;
 import parsers.*;
 import main.ast.nodes.Program;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
+
+import java.util.NavigableMap;
 
 public class SimpleLOOPCompiler {
     public void compile(CharStream textStream) {
@@ -86,6 +91,18 @@ public class SimpleLOOPCompiler {
 
         Program program = simpleLOOPParser.simpleLOOP().simpleLOOPProgram;
 
-        //todo
+
+        ASTTreePrinter astTreePrinter = new ASTTreePrinter();
+        astTreePrinter.visit(program);
+
+//        NameCollector nameCollector = new NameCollector();
+//        nameCollector.visit(program);
+//        InheritanceHandler inheritanceHandler = new InheritanceHandler();
+//        inheritanceHandler.setInfo(nameCollector);
+//        inheritanceHandler.visit(program);
+//        if (inheritanceHandler.getNumberErrors() == 0) {
+//            ASTTreePrinter astTreePrinter = new ASTTreePrinter();
+//            astTreePrinter.visit(program);
     }
 }
+
