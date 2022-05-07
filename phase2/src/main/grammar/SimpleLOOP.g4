@@ -147,7 +147,7 @@ methodBody returns [ArrayList<Statement> methodBodyRet, ArrayList<VariableDeclar
         $methodBodyRet = new ArrayList<>();
     $methodBodyRet.add($ss2.singleStatementRet);} ));
 
-//todo/////////////////////////////////
+//todo
 //done
 //not sure
 methodArgsDec returns[ArrayList<VariableDeclaration> methodArgsDecRet]:

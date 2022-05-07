@@ -73,16 +73,13 @@
 
 package main;
 
-import main.visitor.ErrorReporter;
+import main.visitor.ReporterUtil;
 import main.visitor.name.ASTTreePrinter;
-import main.visitor.name.NameAnalyzer;
-import main.visitor.name.NameCollector;
+import main.visitor.name.RecordChecker;
 import parsers.*;
 import main.ast.nodes.Program;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
-
-import java.util.NavigableMap;
 
 public class SimpleLOOPCompiler {
     public void compile(CharStream textStream) {
@@ -91,13 +88,13 @@ public class SimpleLOOPCompiler {
         SimpleLOOPParser simpleLOOPParser = new SimpleLOOPParser(tokenStream);
 
         Program program = simpleLOOPParser.simpleLOOP().simpleLOOPProgram;
-        NameAnalyzer nameAnalyzer = new NameAnalyzer(program);
-        nameAnalyzer.analyze();
+        RecordChecker recordChecker = new RecordChecker(program);
+        recordChecker.record();
 //        if (!program.hasError()) {
 //        }
 
-        ErrorReporter errorReporter = new ErrorReporter();
-        if(errorReporter.visit(program)==0){
+        ReporterUtil reporterUtil = new ReporterUtil();
+        if(reporterUtil.visit(program)==0){
             ASTTreePrinter astTreePrinter = new ASTTreePrinter();
             astTreePrinter.visit(program);
         }

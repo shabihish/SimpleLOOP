@@ -41,6 +41,7 @@ public class ASTTreePrinter extends Visitor<Void> {
         for (FieldDeclaration field : classDeclaration.getFields())
             field.accept(this);
 
+
         if (classDeclaration.getConstructor() != null)
             classDeclaration.getConstructor().accept(this);
 
@@ -48,6 +49,16 @@ public class ASTTreePrinter extends Visitor<Void> {
             method.accept(this);
         return null;
     }
+
+    // Overridden
+    // Erroneous in g4 code
+    @Override
+    public Void visit(FieldDeclaration fieldDeclaration) {
+        messagePrinter(fieldDeclaration.getLine(), fieldDeclaration.toString());
+        fieldDeclaration.getVarDeclaration().accept(this);
+        return null;
+    }
+
 
     // Overridden
     @Override
@@ -77,15 +88,6 @@ public class ASTTreePrinter extends Visitor<Void> {
     }
 
     // Overridden
-    // Erroneous in g4 code
-    @Override
-    public Void visit(FieldDeclaration fieldDeclaration) {
-        messagePrinter(fieldDeclaration.getLine(), fieldDeclaration.toString());
-        fieldDeclaration.getVarDeclaration().accept(this);
-        return null;
-    }
-
-    // Overridden
     @Override
     public Void visit(VariableDeclaration varDeclaration) {
         messagePrinter(varDeclaration.getLine(), varDeclaration.toString());
@@ -111,16 +113,12 @@ public class ASTTreePrinter extends Visitor<Void> {
         return null;
     }
 
+
     // Overridden
     @Override
-    public Void visit(ConditionalStmt conditionalStmt) {
-        messagePrinter(conditionalStmt.getLine(), conditionalStmt.toString());
-        conditionalStmt.getCondition().accept(this);
-        conditionalStmt.getThenBody().accept(this);
-        if (conditionalStmt.getElseBody() != null)
-            conditionalStmt.getElseBody().accept(this);
-        for (ElsifStmt elsifStmt : conditionalStmt.getElsif())
-            elsifStmt.accept(this);
+    public Void visit(Identifier identifier) {
+        messagePrinter(identifier.getLine(), identifier.toString());
+
         return null;
     }
 
@@ -166,7 +164,19 @@ public class ASTTreePrinter extends Visitor<Void> {
         messagePrinter(eachStmt.getLine(), eachStmt.toString());
         eachStmt.getVariable().accept(this);
         eachStmt.getList().accept(this);
+        // TODO: Check if suffices the needs
         eachStmt.getBody().accept(this);
+        return null;
+    }
+
+    // Overridden
+    @Override
+    public Void visit(SetAdd setAdd) {
+        messagePrinter(setAdd.getLine(), setAdd.toString());
+
+        setAdd.getSetArg().accept(this);
+        setAdd.getElementArg().accept(this);
+
         return null;
     }
 
@@ -174,10 +184,22 @@ public class ASTTreePrinter extends Visitor<Void> {
     @Override
     public Void visit(BinaryExpression binaryExpression) {
         messagePrinter(binaryExpression.getLine(), binaryExpression.toString());
+
         binaryExpression.getFirstOperand().accept(this);
         binaryExpression.getSecondOperand().accept(this);
         return null;
     }
+
+    // TODO: Check if the order of the accept statements is correct
+    // Overridden
+    @Override
+    public Void visit(SetInclude setAdd) {
+        messagePrinter(setAdd.getLine(), setAdd.toString());
+        setAdd.getSetArg().accept(this);
+        setAdd.getElementArg().accept(this);
+        return null;
+    }
+
 
     // Overridden
     @Override
@@ -187,15 +209,6 @@ public class ASTTreePrinter extends Visitor<Void> {
         return null;
     }
 
-    // Overridden
-    @Override
-    public Void visit(TernaryExpression ternaryExpression) {
-        messagePrinter(ternaryExpression.getLine(), ternaryExpression.toString());
-        ternaryExpression.getCondition().accept(this);
-        ternaryExpression.getTrueExpression().accept(this);
-        ternaryExpression.getFalseExpression().accept(this);
-        return null;
-    }
 
     // TODO: Check if the order of the accept statements is correct
     // Overridden
@@ -207,12 +220,7 @@ public class ASTTreePrinter extends Visitor<Void> {
         return null;
     }
 
-    // Overridden
-    @Override
-    public Void visit(Identifier identifier) {
-        messagePrinter(identifier.getLine(), identifier.toString());
-        return null;
-    }
+
 
     // TODO: Check if the order of the accept statements is correct
     // Overridden
@@ -230,8 +238,22 @@ public class ASTTreePrinter extends Visitor<Void> {
     public Void visit(MethodCall methodCall) {
         messagePrinter(methodCall.getLine(), methodCall.toString());
         methodCall.getInstance().accept(this);
+
         for (Expression arg : methodCall.getArgs())
             arg.accept(this);
+        return null;
+    }
+
+    // Overridden
+    @Override
+    public Void visit(ConditionalStmt conditionalStmt) {
+        messagePrinter(conditionalStmt.getLine(), conditionalStmt.toString());
+        conditionalStmt.getCondition().accept(this);
+        conditionalStmt.getThenBody().accept(this);
+        if (conditionalStmt.getElseBody() != null)
+            conditionalStmt.getElseBody().accept(this);
+        for (ElsifStmt elsifStmt : conditionalStmt.getElsif())
+            elsifStmt.accept(this);
         return null;
     }
 
@@ -272,16 +294,15 @@ public class ASTTreePrinter extends Visitor<Void> {
         return null;
     }
 
-    // TODO: Check if the order of the accept statements is correct
     // Overridden
     @Override
-    public Void visit(SetInclude setAdd) {
+    public Void visit(SetMerge setAdd) {
         messagePrinter(setAdd.getLine(), setAdd.toString());
         setAdd.getSetArg().accept(this);
-        setAdd.getElementArg().accept(this);
+        for (Expression arg : setAdd.getElementArgs())
+            arg.accept(this);
         return null;
     }
-
 
     // Overridden
     @Override
@@ -305,20 +326,24 @@ public class ASTTreePrinter extends Visitor<Void> {
     @Override
     public Void visit(SetDelete setDelete) {
         messagePrinter(setDelete.getLine(), setDelete.toString());
+
         setDelete.getSetArg().accept(this);
         setDelete.getElementArg().accept(this);
+
         return null;
     }
 
     // Overridden
     @Override
-    public Void visit(SetMerge setAdd) {
-        messagePrinter(setAdd.getLine(), setAdd.toString());
-        setAdd.getSetArg().accept(this);
-        for (Expression arg : setAdd.getElementArgs())
-            arg.accept(this);
+    public Void visit(TernaryExpression ternaryExpression) {
+        messagePrinter(ternaryExpression.getLine(), ternaryExpression.toString());
+        ternaryExpression.getCondition().accept(this);
+        ternaryExpression.getTrueExpression().accept(this);
+        ternaryExpression.getFalseExpression().accept(this);
         return null;
     }
+
+
 
     // TODO: Check if the order of the accept statements is correct
     // Overridden
@@ -330,12 +355,4 @@ public class ASTTreePrinter extends Visitor<Void> {
         return null;
     }
 
-    // Overridden
-    @Override
-    public Void visit(SetAdd setAdd) {
-        messagePrinter(setAdd.getLine(), setAdd.toString());
-        setAdd.getSetArg().accept(this);
-        setAdd.getElementArg().accept(this);
-        return null;
-    }
 }

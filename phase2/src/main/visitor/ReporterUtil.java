@@ -19,7 +19,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import javax.swing.plaf.nimbus.State;
 
-public class ErrorReporter extends Visitor<Integer> {
+public class ReporterUtil extends Visitor<Integer> {
     private int printErrors(Node node) {
         ArrayList<CompileError> errors = node.flushErrors();
         for(CompileError compileErrorException : errors) {

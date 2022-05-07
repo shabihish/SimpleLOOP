@@ -5,7 +5,7 @@ import main.ast.nodes.declaration.classDec.ClassDeclaration;
 import main.symbolTable.SymbolTable;
 
 public class ClassSymbolTableItem extends SymbolTableItem {
-    public static final String START_KEY = "Class_";
+    public static final String BASE_KEY = "Class_";
     private SymbolTable classSymbolTable;
     private ClassDeclaration classDeclaration;
 
@@ -32,6 +32,6 @@ public class ClassSymbolTableItem extends SymbolTableItem {
 
     @Override
     public String getKey() {
-        return START_KEY + this.name;
+        return BASE_KEY + this.name;
     }
 }
