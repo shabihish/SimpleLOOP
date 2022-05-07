@@ -48,12 +48,8 @@ public interface IVisitor<T> {
 
 
     T visit(SetInclude setAdd);
-
     T visit(SetNew setNew);
-
     T visit(SetDelete setDelete);
-
     T visit(SetMerge setMerge);
-
     T visit(SetAdd setAdd);
 }

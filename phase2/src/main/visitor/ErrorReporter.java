@@ -292,6 +292,15 @@ public class ErrorReporter extends Visitor<Integer> {
         return numOfErrors;
     }
 
+    // Overridden
+    @Override
+    public Integer visit(SetAdd setAdd) {
+        int numOfErrors = printErrors(setAdd);
+        numOfErrors += setAdd.getSetArg().accept(this);
+        numOfErrors += setAdd.getElementArg().accept(this);
+        return numOfErrors;
+    }
+
     //
     @Override
     public Integer visit(RangeExpression rangeExpression) {

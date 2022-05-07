@@ -329,4 +329,13 @@ public class ASTTreePrinter extends Visitor<Void> {
         rangeExpression.getRightExpression().accept(this);
         return null;
     }
+
+    // Overridden
+    @Override
+    public Void visit(SetAdd setAdd) {
+        messagePrinter(setAdd.getLine(), setAdd.toString());
+        setAdd.getSetArg().accept(this);
+        setAdd.getElementArg().accept(this);
+        return null;
+    }
 }

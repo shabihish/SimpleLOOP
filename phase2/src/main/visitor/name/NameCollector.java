@@ -17,6 +17,8 @@ import main.visitor.*;
 import main.symbolTable.exceptions.ItemAlreadyExistsException;
 import main.symbolTable.items.ClassSymbolTableItem;
 
+import java.security.NoSuchAlgorithmException;
+
 
 public class NameCollector extends Visitor<Void> {
 
@@ -33,11 +35,6 @@ public class NameCollector extends Visitor<Void> {
         return null;
     }
 
-//    @Override
-//    public Void visit(VariableDeclaration globalVariableDeclaration) {
-//        GlobalVariableSymbolTableItem globalVariableSymbolTableItem = new GlobalVariableSymbolTableItem(globalVariableDeclaration);
-//    }
-
     @Override
     public Void visit(ClassDeclaration classDeclaration) {
         ClassSymbolTableItem classSymbolTableItem = new ClassSymbolTableItem(classDeclaration);
@@ -48,7 +45,15 @@ public class NameCollector extends Visitor<Void> {
         } catch (ItemAlreadyExistsException e) {
             ClassRedefinition exception = new ClassRedefinition(classDeclaration.getLine(), classDeclaration.getClassName().getName());
             classDeclaration.addError(exception);
-            //exception.handleException();   ------> i dont get this line
+
+            try {
+                classDeclaration.getClassName().setName(Utils.genRandomName("CLASS_" + classDeclaration.getClassName().getName()));
+                ClassSymbolTableItem classSymbolTableItem1 = new ClassSymbolTableItem(classDeclaration);
+                classSymbolTableItem1.setClassSymbolTable(SymbolTable.top);
+                SymbolTable.root.put(classSymbolTableItem1);
+            } catch (NoSuchAlgorithmException | ItemAlreadyExistsException noSuchAlgorithmException) {
+                noSuchAlgorithmException.printStackTrace();
+            }
         }
         for (FieldDeclaration fieldDeclaration : classDeclaration.getFields()) {
             fieldDeclaration.accept(this);
@@ -99,6 +104,13 @@ public class NameCollector extends Visitor<Void> {
 //          // TODO: Should the name be taken like this?
             FieldRedefinition exception = new FieldRedefinition(fieldDeclaration.getLine(), fieldDeclaration.getVarDeclaration().getVarName().getName());
             fieldDeclaration.addError(exception);
+
+            try {
+                fieldDeclaration.getVarDeclaration().getVarName().setName(Utils.genRandomName("FIELD_" + fieldDeclaration.getVarDeclaration().getVarName().getName()));
+                SymbolTable.top.put(new FieldSymbolTableItem(fieldDeclaration));
+            } catch (NoSuchAlgorithmException | ItemAlreadyExistsException noSuchAlgorithmException) {
+                noSuchAlgorithmException.printStackTrace();
+            }
         }
         return null;
     }
@@ -107,25 +119,34 @@ public class NameCollector extends Visitor<Void> {
     public Void visit(VariableDeclaration varDeclaration) {
         if (!varDeclaration.isGlobal()) {
             try {
+                GlobalVariableSymbolTableItem globalVariableSymbolTableItem = new GlobalVariableSymbolTableItem(varDeclaration);
+                SymbolTable.top.getItem(globalVariableSymbolTableItem.getKey(), true);
+                LocalVarConflictWithGlobalVar exception = new LocalVarConflictWithGlobalVar(varDeclaration.getLine(), varDeclaration.getVarName().getName());
+                varDeclaration.addError(exception);
+
+                varDeclaration.getVarName().setName(Utils.genRandomName("VAR_" + varDeclaration.getVarName().getName()));
+            } catch (ItemNotFoundException | NoSuchAlgorithmException ignored) {
+            }
+            try {
                 SymbolTable.top.put(new LocalVariableSymbolTableItem(varDeclaration));
             } catch (ItemAlreadyExistsException e) {
                 LocalVarRedefinition exception = new LocalVarRedefinition(varDeclaration.getLine(), varDeclaration.getVarName().getName());
                 varDeclaration.addError(exception);
             }
-            try {
-                GlobalVariableSymbolTableItem globalVariableSymbolTableItem = new GlobalVariableSymbolTableItem(varDeclaration);
-                SymbolTable.top.getItem(globalVariableSymbolTableItem.getKey(), true);
-                LocalVarConflictWithGlobalVar exception = new LocalVarConflictWithGlobalVar(varDeclaration.getLine(), varDeclaration.getVarName().getName());
-                varDeclaration.addError(exception);
-            } catch (ItemNotFoundException ignored) {
-            }
             return null;
-        }else{
+        } else {
             try {
                 SymbolTable.top.put(new GlobalVariableSymbolTableItem(varDeclaration));
             } catch (ItemAlreadyExistsException e) {
                 GlobalVarRedefinition exception = new GlobalVarRedefinition(varDeclaration.getLine(), varDeclaration.getVarName().getName());
                 varDeclaration.addError(exception);
+
+                try {
+                    varDeclaration.getVarName().setName(Utils.genRandomName("GLVAR_" + varDeclaration.getVarName().getName()));
+                    SymbolTable.top.put(new GlobalVariableSymbolTableItem(varDeclaration));
+                } catch (NoSuchAlgorithmException | ItemAlreadyExistsException noSuchAlgorithmException) {
+                    noSuchAlgorithmException.printStackTrace();
+                }
             }
             return null;
         }
