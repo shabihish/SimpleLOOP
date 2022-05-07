@@ -137,7 +137,7 @@ public class NameChecker extends Visitor<Void> {
         if(!fieldDeclaration.hasError()) {
             try {
                 SymbolTable classSymbolTable = this.getCurrentClassSymbolTable();
-                classSymbolTable.getItem(FieldSymbolTableItem.START_KEY + fieldDeclaration.getVarDeclaration().getVarName().getName(), false);
+                classSymbolTable.getItem(FieldSymbolTableItem.START_KEY + fieldDeclaration.getVarDeclaration().getVarName().getName() + "_" + fieldDeclaration.getVarDeclaration().getType(), false);
                 FieldRedefinition exception = new FieldRedefinition(fieldDeclaration.getLine(), fieldDeclaration.getVarDeclaration().getVarName().getName());
                 fieldDeclaration.addError(exception);
             } catch (ItemNotFoundException ignored) {

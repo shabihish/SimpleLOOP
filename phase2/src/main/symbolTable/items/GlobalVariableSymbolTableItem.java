@@ -13,8 +13,9 @@ public class GlobalVariableSymbolTableItem extends SymbolTableItem {
         this.type = varDeclaration.getType();
     }
 
+    //TODO: Must return an error if global vars conflict with names only?
     public String getKey() {
-        return START_KEY + this.name;
+        return START_KEY + this.name + this.type;
     }
 
     public Type getType() {

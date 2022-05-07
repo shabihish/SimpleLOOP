@@ -56,6 +56,7 @@ public class MethodSymbolTableItem extends SymbolTableItem {
         this.methodSymbolTable = methodSymbolTable;
     }
 
+    // TODO: Is overloading accepted?
     @Override
     public String getKey() {
         return START_KEY + this.name;

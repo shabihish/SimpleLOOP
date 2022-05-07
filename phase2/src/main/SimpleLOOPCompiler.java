@@ -93,22 +93,11 @@ public class SimpleLOOPCompiler {
         Program program = simpleLOOPParser.simpleLOOP().simpleLOOPProgram;
         NameAnalyzer nameAnalyzer = new NameAnalyzer(program);
         nameAnalyzer.analyze();
-//        if (!program.hasError()) {
-//        }
 
         ErrorReporter errorReporter = new ErrorReporter();
-        if(errorReporter.visit(program)==0){
+        if (errorReporter.visit(program) == 0) {
             ASTTreePrinter astTreePrinter = new ASTTreePrinter();
             astTreePrinter.visit(program);
         }
-
-//        NameCollector nameCollector = new NameCollector();
-//        nameCollector.visit(program);
-//        InheritanceHandler inheritanceHandler = new InheritanceHandler();
-//        inheritanceHandler.setInfo(nameCollector);
-//        inheritanceHandler.visit(program);
-//        if (inheritanceHandler.getNumberErrors() == 0) {
-//            ASTTreePrinter astTreePrinter = new ASTTreePrinter();
-//            astTreePrinter.visit(program);
     }
 }

@@ -13,8 +13,9 @@ public class FieldSymbolTableItem extends SymbolTableItem {
         this.type = fieldDeclaration.getVarDeclaration().getType();
     }
 
+    // TODO: Should also check for type?
     public String getKey() {
-        return START_KEY + this.name;
+        return START_KEY + this.name + "_" + this.type;
     }
 
     public Type getType() {

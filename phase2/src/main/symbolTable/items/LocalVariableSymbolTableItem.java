@@ -14,7 +14,7 @@ public class LocalVariableSymbolTableItem extends SymbolTableItem {
     }
 
     public String getKey() {
-        return START_KEY + this.name;
+        return START_KEY + this.name + this.type;
     }
 
     public Type getType() {
