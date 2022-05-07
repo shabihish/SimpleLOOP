@@ -319,12 +319,13 @@ methodCallStmt returns [MethodCallStmt methodCallStmtRet] locals [Expression ins
 //correct_
 returnStatement returns [ReturnStmt returnStatementRet ]:
     l = RETURN
-    {$returnStatementRet = new NullValue();
-    $returnStatementRet.setLine($l.getLine());}
-    (expr = expression
     {$returnStatementRet = new ReturnStmt();
     $returnStatementRet.setLine($l.getLine());
-    $returnStatementRet.setReturnedExpr($expr.exprRet);})?;
+    NullValue nullValue = new NullValue();
+    nullValue.setLine($l.getLine());
+    $returnStatementRet.setReturnedExpr(nullValue);}
+    (expr = expression
+    {$returnStatementRet.setReturnedExpr($expr.exprRet);})?;
 
 //todo
 //done
@@ -341,7 +342,7 @@ loopStatement returns [EachStmt loopStatementRet] locals [Expression list]:
     {$list = $aExpr.exprRet;}
     ) | (l = LPAR lex = expression DOT DOT rex = expression RPAR
     {$list = new RangeExpression($lex.exprRet, $rex.exprRet);
-    $list.setLine($l.getLine())}
+    $list.setLine($l.getLine());}
     ))DOT l1=EACH DO BAR id = identifier BAR b = body
     {
       $loopStatementRet = new EachStmt($id.idRet, $list);
