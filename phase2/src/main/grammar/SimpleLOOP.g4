@@ -142,9 +142,12 @@ methodBody returns [ArrayList<Statement> methodBodyRet, ArrayList<VariableDeclar
     NEWLINE+)* RBRACE)| (( vd2 = varDecStatement
     { for (VariableDeclaration vd: $vd2.vardDecStatementRet)
            $localVars.add(vd);})
-    | (ss2=singleStatement {$methodBodyRet.add($ss2.singleStatementRet);} ));
+    | (ss2=singleStatement
+    {if($methodBodyRet==null)
+        $methodBodyRet = new ArrayList<>();
+    $methodBodyRet.add($ss2.singleStatementRet);} ));
 
-//todo
+//todo/////////////////////////////////
 //done
 //not sure
 methodArgsDec returns[ArrayList<VariableDeclaration> methodArgsDecRet]:
@@ -214,7 +217,6 @@ addStatement returns [SetAdd addStatementRet]:
 //not sure about return type where to set line?
 mergeStatement returns [SetMerge mergeStatementRet] locals[ArrayList<Expression> elementargs ,Expression setarg, int line]:
     {$elementargs = new ArrayList<>();}
-
     e1 = expression DOT l = MERGE LPAR e2 = orExpression
     { $setarg = $e1.exprRet;
       $line = $l.getLine();
@@ -295,20 +297,34 @@ printStatement returns [PrintStmt printStatementRet]:
 //dont know what to do with inc and dec
 methodCallStmt returns [MethodCallStmt methodCallStmtRet] locals [Expression instance, MethodCall expr]:
     e1 = accessExpression{$instance = $e1.exprRet;}
-    (DOT ( id1 = INITIALIZE {$instance = new ObjectMemberAccess($instance, new Identifier($id1.toString()));}
-    | id2 = identifier {$instance = new ObjectMemberAccess($instance, new Identifier($id2.idRet.toString()));}))*
+    (DOT ( id1 = INITIALIZE {var id = new Identifier($id1.text);
+    id.setLine($id1.getLine());
+    $instance = new ObjectMemberAccess($instance, id);
+    $instance.setLine($id1.getLine());
+    }
+    | id2 = identifier {
+    $instance = new ObjectMemberAccess($instance, $id2.idRet);
+    $instance.setLine($id2.idRet.getLine());
+    }))*
     (( l = LPAR args = methodArgs
     {$expr = new MethodCall($instance , $args.methodArgsRet);
      $expr.setLine($l.getLine());
-    } RPAR){$methodCallStmtRet = new MethodCallStmt($expr);} | ((op = INC | op = DEC)));
+    } RPAR)
+    {$methodCallStmtRet = new MethodCallStmt($expr);
+     $methodCallStmtRet.setLine($expr.getLine());
+    }/* | ((op = INC | op = DEC))*/);
 
 //todo
 //done
 //correct_
 returnStatement returns [ReturnStmt returnStatementRet ]:
-    { $returnStatementRet = new ReturnStmt();}
-    l = RETURN {$returnStatementRet.setLine($l.getLine());}
-    (expr = expression {$returnStatementRet.setReturnedExpr($expr.exprRet);})?;
+    l = RETURN
+    {$returnStatementRet = new NullValue();
+    $returnStatementRet.setLine($l.getLine());}
+    (expr = expression
+    {$returnStatementRet = new ReturnStmt();
+    $returnStatementRet.setLine($l.getLine());
+    $returnStatementRet.setReturnedExpr($expr.exprRet);})?;
 
 //todo
 //done
@@ -323,13 +339,14 @@ assignmentStatement returns [AssignmentStmt assignmentStatementRet]:
 loopStatement returns [EachStmt loopStatementRet] locals [Expression list]:
     ((aExpr = accessExpression
     {$list = $aExpr.exprRet;}
-    ) | (LPAR lex = expression DOT DOT rex = expression RPAR
-    {$list = new RangeExpression($lex.exprRet, $rex.exprRet);}
-    ))DOT l=EACH DO BAR id = identifier BAR b = body
+    ) | (l = LPAR lex = expression DOT DOT rex = expression RPAR
+    {$list = new RangeExpression($lex.exprRet, $rex.exprRet);
+    $list.setLine($l.getLine())}
+    ))DOT l1=EACH DO BAR id = identifier BAR b = body
     {
       $loopStatementRet = new EachStmt($id.idRet, $list);
       $loopStatementRet.setBody($b.bodyRet);
-      $loopStatementRet.setLine($l.getLine());
+      $loopStatementRet.setLine($l1.getLine());
     };
 
 //todo
@@ -474,15 +491,29 @@ postUnaryExpression returns [Expression exprRet] locals[UnaryOperator op, int li
 //correct_
 accessExpression returns [Expression exprRet]:
     e1 = otherExpression {$exprRet = $e1.otherExpressionRet;}
-    ((lpar=LPAR m = methodArgs
-    {$exprRet = new MethodCall($exprRet, $m.methodArgsRet);
-    $exprRet.setLine($lpar.getLine());}
-     RPAR) | (DOT ( id = identifier
+    (
+    (lpar=LPAR m = methodArgs
+    {
+        if(!($exprRet instanceof NewClassInstance)){
+            $exprRet = new MethodCall($exprRet, $m.methodArgsRet);
+            $exprRet.setLine($lpar.getLine());
+        }else{
+            ((NewClassInstance) $exprRet).setArgs($m.methodArgsRet);
+        }
+    }
+     RPAR)|
+     (DOT
+     ( id = identifier
      { $exprRet = new ObjectMemberAccess($exprRet,$id.idRet);
-       $exprRet.setLine($id.line);
-     }| nw=NEW
+       $exprRet.setLine($id.idRet.getLine());
+     }|
+     nw=NEW
      {$exprRet = new NewClassInstance(new ClassType((Identifier)$exprRet));
-     $exprRet.setLine($nw.getLine());} | INITIALIZE)))*
+     $exprRet.setLine($nw.getLine());} |
+     INITIALIZE)
+     )
+     )*
+
     ((DOT (id = identifier
      { $exprRet = new ObjectMemberAccess($exprRet,$id.idRet);
      $exprRet.setLine($id.line);
@@ -507,12 +538,16 @@ otherExpression returns [Expression otherExpressionRet]:
 
 //todo: Needs a check
 //done
-//correct
+//changed
 setNew returns [Expression setNewRet] locals[ArrayList<Expression> args]:
     {$args = new ArrayList<>();}
     SET DOT l = NEW LPAR (LPAR e1 = orExpression {$args.add($e1.orExpressionRet);}
      (COMMA e2 = orExpression {$args.add($e2.orExpressionRet);}
-     )* RPAR)?  RPAR;
+     )* RPAR)?  RPAR
+     {
+     $setNewRet = new SetNew($args);
+     $setNewRet.setLine($l.getLine());
+     };
 
 //todo
 //done
