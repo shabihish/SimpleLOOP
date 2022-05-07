@@ -85,7 +85,7 @@ classDeclaration returns [ClassDeclaration classDeclarationRet]:
           {
               $classDeclarationRet.setConstructor((ConstructorDeclaration) field);
           }
-          if(field instanceof MethodDeclaration)
+          if(field instanceof MethodDeclaration && !(field instanceof ConstructorDeclaration))
           {
               $classDeclarationRet.addMethod((MethodDeclaration) field);
           }
@@ -123,7 +123,7 @@ method returns [MethodDeclaration methodDeclarationRet] locals [Type rtype]:
 
      ) id = identifier args = methodArgsDec NEWLINE* m = methodBody
      { $methodDeclarationRet = new MethodDeclaration($id.idRet, $rtype, false);
-       $methodDeclarationRet.setLine($id.idRet.getLine());
+       $methodDeclarationRet.setLine($id.line);
        $methodDeclarationRet.setLocalVars($m.localVars);
        $methodDeclarationRet.setArgs($args.methodArgsDecRet);
        $methodDeclarationRet.setBody($m.methodBodyRet);
@@ -161,7 +161,7 @@ methodArgsDec returns[ArrayList<VariableDeclaration> methodArgsDecRet]:
 argDec returns [VariableDeclaration argDecRet]:
     t = type id = identifier
     { $argDecRet = new VariableDeclaration($id.idRet,$t.typeRet);
-      $argDecRet.setLine($id.idRet.getLine());};
+      $argDecRet.setLine($id.line);};
 
 //todo
 //done
@@ -241,12 +241,12 @@ varDecStatement returns [ArrayList<VariableDeclaration> vardDecStatementRet]:
     {$vardDecStatementRet = new ArrayList<>();}
     t = type id1 = identifier
      { var newvar = new VariableDeclaration($id1.idRet, $t.typeRet);
-       newvar.setLine($id1.idRet.getLine());
+       newvar.setLine($id1.line);
        $vardDecStatementRet.add(newvar);
      }
      (COMMA id2 = identifier
      {newvar = new VariableDeclaration($id2.idRet, $t.typeRet);
-            newvar.setLine($id2.idRet.getLine());
+            newvar.setLine($id2.line);
             $vardDecStatementRet.add(newvar);
      }
      )*;
@@ -479,13 +479,13 @@ accessExpression returns [Expression exprRet]:
     $exprRet.setLine($lpar.getLine());}
      RPAR) | (DOT ( id = identifier
      { $exprRet = new ObjectMemberAccess($exprRet,$id.idRet);
-       $exprRet.setLine($id.idRet.getLine());
+       $exprRet.setLine($id.line);
      }| nw=NEW
      {$exprRet = new NewClassInstance(new ClassType((Identifier)$exprRet));
      $exprRet.setLine($nw.getLine());} | INITIALIZE)))*
     ((DOT (id = identifier
      { $exprRet = new ObjectMemberAccess($exprRet,$id.idRet);
-     $exprRet.setLine($id.idRet.getLine());
+     $exprRet.setLine($id.line);
      })) | (l = LBRACK e = expression
      { $exprRet = new ArrayAccessByIndex($exprRet,$e.exprRet);
       $exprRet.setLine($l.getLine()); }
