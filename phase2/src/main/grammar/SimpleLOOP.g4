@@ -360,7 +360,8 @@ expression returns [Expression exprRet]:
       $exprRet = new BinaryExpression($exprRet , $e1.exprRet, opr);
       $exprRet.setLine($l.getLine());}
     )? (DOT inc=INCLUDE LPAR oe=orExpression RPAR
-    {$exprRet = new SetInclude($exprRet, $oe.orExpressionRet);}
+    {$exprRet = new SetInclude($exprRet, $oe.orExpressionRet);
+    $exprRet.setLine($inc.getLine());}
     )?;
 
 //todo

@@ -112,7 +112,6 @@ public class NameCheckHandler extends Visitor<Void> {
             for (ClassDeclaration classDeclaration : root.getClasses()) {
                 String childName = classDeclaration.getClassName().getName();
 
-
                 if (classH.isSecondNodeAncestorOf(childName, currClassName)) {
                     try {
                         ClassSymbolTableItem childSymbolTableItem = (ClassSymbolTableItem)
