@@ -135,7 +135,7 @@ method returns [MethodDeclaration methodDeclarationRet] locals [Type rtype]:
 methodBody returns [ArrayList<Statement> methodBodyRet, ArrayList<VariableDeclaration> localVars ]:
     { $methodBodyRet = new ArrayList<>();
       $localVars = new ArrayList<>(); }
-    (LBRACE NEWLINE+ ( vd1 = varDecStatement
+    ((LBRACE NEWLINE+ ( vd1 = varDecStatement
     { for (VariableDeclaration vd: $vd1.vardDecStatementRet)
         $localVars.add(vd);}
     NEWLINE+)* ( ss1 = singleStatement  { $methodBodyRet.add($ss1.singleStatementRet);}
@@ -145,7 +145,7 @@ methodBody returns [ArrayList<Statement> methodBodyRet, ArrayList<VariableDeclar
     | (ss2=singleStatement
     {if($methodBodyRet==null)
         $methodBodyRet = new ArrayList<>();
-    $methodBodyRet.add($ss2.singleStatementRet);} ));
+    $methodBodyRet.add($ss2.singleStatementRet);} )));
 
 //todo
 //done
