@@ -76,7 +76,7 @@ classDeclaration returns [ClassDeclaration classDeclarationRet]:
       }
     }
      NEWLINE+)+ RBRACE) | ( f2 = field_decleration
-     { for (Declaration field : $f1.field_declerationRet) {
+     { for (Declaration field : $f2.field_declerationRet) {
           if(field instanceof FieldDeclaration)
           {
               $classDeclarationRet.addField((FieldDeclaration) field);
