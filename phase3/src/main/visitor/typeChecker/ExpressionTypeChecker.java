@@ -32,72 +32,76 @@ import java.util.*;
 
 public class ExpressionTypeChecker extends Visitor<Type> {
     private Graph<String> classHierarchy;
-
+    private ClassDeclaration currClass;
+    private MethodDeclaration currMethod;
 
     public ExpressionTypeChecker(Graph<String> classHierarchy) {
         this.classHierarchy = classHierarchy;
     }
 
-
-    public boolean typesMatch(Type firstType,Type secondType){
-        if(firstType instanceof NoType)
+    public boolean SubtypeChecking(Type t1, Type t2)
+    {
+        if(t1 instanceof NoType)
             return true;
-        if(firstType instanceof IntType  && secondType instanceof IntType)
+        if(t1.toString().equals(t2.toString()))
             return true;
-        if(firstType instanceof BoolType && secondType instanceof BoolType)
+        if( t1 instanceof NullType && (t2 instanceof FptrType || t2 instanceof ClassType))
             return true;
-        if(firstType instanceof VoidType && secondType instanceof VoidType)
-            return true;
-        if (firstType instanceof ArrayType && secondType instanceof ArrayType){
-            return typesMatch(((ArrayType) firstType).getType(), ((ArrayType) secondType).getType());
-        }
-
-        if (firstType instanceof SetType && secondType instanceof SetType)
-            return true;
-
-        if(firstType instanceof FptrType && secondType instanceof FptrType) {
-            Type t1 = ((FptrType) firstType).getReturnType();
-            Type t2 = ((FptrType) secondType).getReturnType();
-            if (!typesMatch(t1, t2))
+        if(t1 instanceof FptrType)
+        {
+            if (!SubtypeChecking(((FptrType) t1).getReturnType(), ((FptrType) t2).getReturnType()))
                 return false;
-            ArrayList<Type> arg1 = ((FptrType) firstType).getArgumentsTypes();
-            ArrayList<Type> arg2 = ((FptrType) secondType).getArgumentsTypes();
-
+            ArrayList<Type> arg1 = ((FptrType) t1).getArgumentsTypes();
+            ArrayList<Type> arg2 = ((FptrType) t2).getArgumentsTypes();
             if (arg1.size() != arg2.size())
                 return false;
-            else {
-                for (int i = 0; i < arg1.size(); i++) {
-                    if (!typesMatch(arg1.get(i), arg2.get(i)))
-                        return false;
-                }
+            for (int i = 0; i < arg1.size(); i++) {
+                if (!SubtypeChecking(arg1.get(i), arg2.get(i)))
+                    return false;
             }
+
             return true;
         }
-
-        else if(firstType instanceof NullType)
-            return secondType instanceof NullType || secondType instanceof FptrType || secondType instanceof ClassType;
-
-        if(firstType instanceof ClassType) {
-            if(!(secondType instanceof ClassType))
-                return false;
-            return this.classHierarchy.isSecondNodeAncestorOf(((ClassType) firstType).getClassName().getName(), ((ClassType) secondType).getClassName().getName());
+        if(t1 instanceof ClassType) {
+            if (((ClassType) t1).getClassName().getName().equals(((ClassType) t2).getClassName().getName())){
+                return true;
+            }
+            else
+                return this.classHierarchy.isSecondNodeAncestorOf(((ClassType) t1).getClassName().getName(), ((ClassType) t2).getClassName().getName());
         }
+
+       if (t1 instanceof ArrayType && t2 instanceof ArrayType){
+            return SubtypeChecking(((ArrayType)t1).getType(), ((ArrayType) t2).getType());
+        }
+        if (t1 instanceof SetType && t2 instanceof SetType)
+            return true;
         return false;
+        //if(t1 instance of Arraytype
+        //if(t1 instance of SetType
+
+    }
+    public boolean TypesMatch(Type firstType,Type secondType){
+        // are bool and int subtype??
+        //what if type is not a real type??
+        return SubtypeChecking(firstType, secondType);
     }
 
     public boolean isLvalue(Expression expression){
-        if(!(expression instanceof Identifier || expression instanceof ObjectMemberAccess ||
-                expression instanceof ArrayAccessByIndex)) {
-            return false;
-        }
-        return true;
+      
     }
 
+    private boolean IsEqualityExprType(Type type)
+    {
+        if(type instanceof SetType || type instanceof ArrayType)
+            return false;
+        return true;
+    }
     @Override
     // assign,
     // eq, gt, lt, add, sub
     // mult, div,
     // and, or
+  
     public Type visit(BinaryExpression binaryExpression) {
         //Todo
 
@@ -110,40 +114,16 @@ public class ExpressionTypeChecker extends Visitor<Type> {
             return new NoType();
 
         else if(opt.equals(BinaryOperator.eq)) {
-            if(firstExprType instanceof NoType && (secondExprType instanceof SetType || secondExprType instanceof ArrayType))
+            if((IsEqualityExprType(firstExprType) && !IsEqualityExprType(secondExprType))||(IsEqualityExprType(secondExprType) && !IsEqualityExprType(firstExprType)))
             {
                 UnsupportedOperandType exception = new UnsupportedOperandType(binaryExpression.getLine(), opt.name());
                 binaryExpression.addError(exception);
                 return new NoType();
             }
-            else if(secondExprType instanceof NoType && (firstExprType instanceof SetType || firstExprType instanceof ArrayType))
-            {
-                UnsupportedOperandType exception = new UnsupportedOperandType(binaryExpression.getLine(), opt.name());
-                binaryExpression.addError(exception);
+            if(secondExprType instanceof NoType || secondExprType instanceof NoType)
                 return new NoType();
-            }
-            else if(firstExprType instanceof NoType || secondExprType instanceof NoType)
-                return new NoType();
-
-            else if(firstExprType instanceof ArrayType || secondExprType instanceof ArrayType
-                    || firstExprType instanceof SetType || secondExprType instanceof SetType) {
-                UnsupportedOperandType exception = new UnsupportedOperandType(firstExpr.getLine(), opt.name());
-                binaryExpression.addError(exception);
-                return new NoType();
-            }
-            else if((firstExprType instanceof ClassType || secondExprType instanceof NullType) ||
-                    (secondExprType instanceof ClassType || firstExprType instanceof NullType)) {
+            if(TypesMatch(firstExprType,secondExprType))
                 return new BoolType();
-            }
-            else if((firstExprType instanceof FptrType || secondExprType instanceof NullType) ||
-                    (secondExprType instanceof FptrType || firstExprType instanceof NullType)) {
-                return new BoolType();
-            }
-            else if(!typesMatch(firstExprType,secondExprType)) {
-                UnsupportedOperandType exception = new UnsupportedOperandType(secondExpr.getLine(), opt.name());
-                binaryExpression.addError(exception);
-                return new NoType();
-            }
             if(firstExprType instanceof NullType || secondExprType instanceof NullType)
                 return new BoolType();
         }
@@ -156,12 +136,9 @@ public class ExpressionTypeChecker extends Visitor<Type> {
             }
             else if(firstExprType instanceof NoType || secondExprType instanceof NoType)
                 return new NoType();
-
             else if((firstExprType instanceof IntType) && (secondExprType instanceof IntType))
                 return new BoolType();
-            UnsupportedOperandType exception = new UnsupportedOperandType(binaryExpression.getLine(), opt.name());
-            binaryExpression.addError(exception);
-            return new NoType();
+
         }
 
         else if((opt == BinaryOperator.add) || (opt == BinaryOperator.sub) ||
@@ -177,9 +154,7 @@ public class ExpressionTypeChecker extends Visitor<Type> {
                 return new NoType();
             else if((firstExprType instanceof IntType) && (secondExprType instanceof IntType))
                 return new IntType();
-            UnsupportedOperandType exception = new UnsupportedOperandType(binaryExpression.getLine(), opt.name());
-            binaryExpression.addError(exception);
-            return new NoType();
+
         }
 
         else if((opt == BinaryOperator.or) || (opt == BinaryOperator.and)) {
@@ -193,14 +168,11 @@ public class ExpressionTypeChecker extends Visitor<Type> {
                 return new NoType();
             else if((firstExprType instanceof BoolType) && (secondExprType instanceof BoolType))
                 return new BoolType();
-            UnsupportedOperandType exception = new UnsupportedOperandType(binaryExpression.getLine(), opt.name());
-            binaryExpression.addError(exception);
-            return new NoType();
         }
 
         else if(opt == BinaryOperator.assign) {
             boolean Lvalue = this.isLvalue(firstExpr);
-            boolean match = this.typesMatch(secondExprType, firstExprType);
+            boolean match = this.TypesMatch(secondExprType, firstExprType);
             if(!Lvalue) {
                 LeftSideNotLvalue exception = new LeftSideNotLvalue(binaryExpression.getLine());
                 binaryExpression.addError(exception);
@@ -208,23 +180,60 @@ public class ExpressionTypeChecker extends Visitor<Type> {
             if(firstExprType instanceof NoType || secondExprType instanceof NoType || (!Lvalue && match)) {
                 return new NoType();
             }
-
             if(Lvalue && match)
                 return secondExprType;
-
-            UnsupportedOperandType exception = new UnsupportedOperandType(binaryExpression.getLine(), opt.name());
-            binaryExpression.addError(exception);
-            return new NoType();
         }
-        return null;
+        UnsupportedOperandType exception = new UnsupportedOperandType(binaryExpression.getLine(), operator.name());
+        binaryExpression.addError(exception);
+        return new NoType();
     }
 
 
     @Override
     public Type visit(NewClassInstance newClassInstance) { //just type
         //todo
-        return null;
+        ClassType classtype = newClassInstance.getClassType();
+        String classname = classtype.getClassName().getName();
+        boolean classDeclared = this.classHierarchy.doesGraphContainNode(classname);
+        if(!classDeclared)
+        {
+            ClassNotDeclared exception = new ClassNotDeclared(newClassInstance.getLine(), classname);
+            newClassInstance.addError(exception);
+            return new NoType();
+        }
+        try {
+            ClassSymbolTableItem classSymbolTableItem = (ClassSymbolTableItem) SymbolTable.root.getItem(ClassSymbolTableItem.START_KEY + classname, true);
+            ConstructorDeclaration constructor = classSymbolTableItem.getClassDeclaration().getConstructor();
+            ArrayList<Expression> args = newClassInstance.getArgs();
+            if (constructor == null && args.size()!=0) {
+                newClassInstance.addError((new ConstructorArgsNotMatchDefinition(newClassInstance)));
+                return new NoType();
+            }
+            else {
+                ArrayList<ArgPair> constructorTypes = constructor.getArgs();
+                if (args.size() != constructorTypes.size()) {
+                    newClassInstance.addError(new ConstructorArgsNotMatchDefinition(newClassInstance));
+                    return new NoType();
+                }
+                for (int i = 0; i < args.size(); i++) {
+                    Type constructorArgType = constructorTypes.get(i).getVariableDeclaration().getType();
+                    Type newInstancetype = args.get(i).accept(this);
+                    if (!TypesMatch(newInstancetype, constructorArgType)) {
+                        newClassInstance.addError(new ConstructorArgsNotMatchDefinition(newClassInstance));
+                        return new NoType();
+                    }
+                }
+            }
+
+        }
+        catch (ItemNotFoundException e){
+            newClassInstance.addError(new ClassNotDeclared(newClassInstance.getLine(), classname));
+            return new NoType();
+        }
+        return classtype;
+
     }
+
 
     @Override
     public Type visit(UnaryExpression unaryExpression) {
