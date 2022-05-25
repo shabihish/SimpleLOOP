@@ -115,6 +115,14 @@ public class ExpressionTypeChecker extends Visitor<Type> {
 
         else if(opt.equals(BinaryOperator.eq)) {
             if((IsEqualityExprType(firstExprType) && !IsEqualityExprType(secondExprType))||(IsEqualityExprType(secondExprType) && !IsEqualityExprType(firstExprType)))
+//            if(firstExprType instanceof NoType && (secondExprType instanceof SetType || secondExprType instanceof ArrayType))
+//            {
+//                UnsupportedOperandType exception = new UnsupportedOperandType(binaryExpression.getLine(), opt.name());
+//                binaryExpression.addError(exception);
+//                return new NoType();
+//            }
+//
+//            else if(secondExprType instanceof NoType && (firstExprType instanceof SetType || firstExprType instanceof ArrayType))
             {
                 UnsupportedOperandType exception = new UnsupportedOperandType(binaryExpression.getLine(), opt.name());
                 binaryExpression.addError(exception);

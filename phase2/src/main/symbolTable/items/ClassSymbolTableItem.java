@@ -1,6 +1,5 @@
 package main.symbolTable.items;
 
-
 import main.ast.nodes.declaration.classDec.ClassDeclaration;
 import main.symbolTable.SymbolTable;
 
