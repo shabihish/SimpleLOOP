@@ -18,6 +18,7 @@ import main.ast.types.NullType;
 import main.ast.types.Type;
 import main.ast.types.primitives.BoolType;
 import main.ast.types.primitives.IntType;
+import main.ast.types.primitives.VoidType;
 import main.ast.types.set.SetType;
 import main.compileError.typeError.*;
 import main.symbolTable.utils.graph.Graph;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 public class TypeChecker extends Visitor<Void> {
     private Graph<String> classHierarchy;
     ExpressionTypeChecker expressionTypeChecker;
+    private ClassDeclaration currentClass;
 
     public TypeChecker(Graph<String> classHierarchy) {
         this.classHierarchy = classHierarchy;
@@ -40,6 +42,7 @@ public class TypeChecker extends Visitor<Void> {
     public Void visit(Program program) {
         boolean isMainDefined = false;
         for (ClassDeclaration classDeclaration : program.getClasses()) {
+            this.expressionTypeChecker.setCurrentClass(classDeclaration);
             classDeclaration.accept(this);
             if (classDeclaration.getClassName().getName().equals("Main"))
                 isMainDefined = true;
@@ -83,12 +86,15 @@ public class TypeChecker extends Visitor<Void> {
         }
 
         if (classDeclaration.getConstructor() != null) {
+            this.expressionTypeChecker.setCurrentMethod(classDeclaration.getConstructor());
             classDeclaration.getConstructor().accept(this);
         }
 
         for (MethodDeclaration methodDeclaration : classDeclaration.getMethods()) {
+            this.expressionTypeChecker.setCurrentMethod(methodDeclaration);
             methodDeclaration.accept(this);
             boolean doesReturn = methodDeclaration.getDoesReturn();
+
             if (methodDeclaration.getReturnType() instanceof NullType && doesReturn) {
                 MissingReturnStatement exception = new MissingReturnStatement(methodDeclaration);
                 methodDeclaration.addError(exception);
@@ -105,15 +111,19 @@ public class TypeChecker extends Visitor<Void> {
     @Override
     public Void visit(ConstructorDeclaration constructorDeclaration) {
 //        ((MethodDeclaration) constructorDeclaration).accept(this);
+        this.visit((MethodDeclaration) constructorDeclaration);
         return null;
     }
 
     @Override
     public Void visit(MethodDeclaration methodDeclaration) {
 //        this.expressionTypeChecker.(methodDeclaration.getReturnType(), methodDeclaration);
+
         for(ArgPair arg : methodDeclaration.getArgs()) {
             arg.getVariableDeclaration().accept(this);
-            if (expressionTypeChecker.isFirstSubTypeOfSecond(arg.getDefaultValue().accept(expressionTypeChecker), arg.getVariableDeclaration().getType())){
+            if(arg.getDefaultValue() == null)
+                continue;
+            if (expressionTypeChecker.SubtypeChecking(arg.getDefaultValue().accept(expressionTypeChecker), arg.getVariableDeclaration().getType())){
                 // TODO: Check if line checking is correct
                 UnsupportedOperandType exception = new UnsupportedOperandType(arg.getVariableDeclaration().getLine(), BinaryOperator.assign.name());
                 methodDeclaration.addError(exception);
@@ -125,6 +135,7 @@ public class TypeChecker extends Visitor<Void> {
 
         boolean hasReturned = false;
         for(Statement statement : methodDeclaration.getBody()) {
+
             statement.accept(this);
             if(hasReturned) {
                 UnreachableStatements exception = new UnreachableStatements(statement);
@@ -132,8 +143,9 @@ public class TypeChecker extends Visitor<Void> {
             }
             if(statement instanceof ReturnStmt){
                 hasReturned = true;
+
                 Type returnType = ((ReturnStmt)statement).getReturnedExpr().accept(expressionTypeChecker);
-                if (!expressionTypeChecker.isFirstSubTypeOfSecond(returnType, methodDeclaration.getReturnType())){
+                if (!expressionTypeChecker.SubtypeChecking(returnType, methodDeclaration.getReturnType())){
                     ReturnValueNotMatchMethodReturnType exception = new ReturnValueNotMatchMethodReturnType((ReturnStmt) statement);
                     methodDeclaration.addError(exception);
                 }
@@ -163,8 +175,8 @@ public class TypeChecker extends Visitor<Void> {
             LeftSideNotLvalue exception = new LeftSideNotLvalue(assignmentStmt.getLine());
             assignmentStmt.addError(exception);
         }
-        boolean isSubtype = expressionTypeChecker.isFirstSubTypeOfSecond(secondType, firstType);
-        if(!isSubtype && !(firstType instanceof NoType || secondType instanceof NoType)) {
+        boolean isSubtype = expressionTypeChecker.SubtypeChecking( firstType,secondType);
+        if(!isSubtype && !(firstType instanceof NoType && secondType instanceof NoType)) {
             UnsupportedOperandType exception = new UnsupportedOperandType(assignmentStmt.getLine(), BinaryOperator.assign.name());
             assignmentStmt.addError(exception);
             return null;
@@ -205,6 +217,7 @@ public class TypeChecker extends Visitor<Void> {
     @Override
     public Void visit(MethodCallStmt methodCallStmt) {
 //        expressionTypeChecker.setIsInMethodCallStmt(true);
+
         methodCallStmt.getMethodCall().accept(expressionTypeChecker);
 //        expressionTypeChecker.setIsInMethodCallStmt(false);
         return null;
@@ -233,9 +246,20 @@ public class TypeChecker extends Visitor<Void> {
         Type varType = eachStmt.getVariable().accept(expressionTypeChecker);
         Type listType = eachStmt.getList().accept(expressionTypeChecker);
         // TODO: Could listType also be an instance of SetType?
-        if(!(listType instanceof ArrayType || listType instanceof NoType)) {
+
+        //I don know why the hell instanceof is not working
+
+        if(!(listType.toString().equals("ArrayType") || listType instanceof NoType)) {
             EachCantIterateNoneArray exception = new EachCantIterateNoneArray(eachStmt.getLine());
             eachStmt.addError(exception);
+            return null;
+        }
+
+
+        boolean typesMatch = expressionTypeChecker.VarTypeMatchArrayType(listType,varType);
+        if(!typesMatch)
+        {
+            eachStmt.addError(new EachVarNotMatchList(eachStmt));
         }
         /* else if(!(listType instanceof NoType)) {
             ArrayList<Type> types = new ArrayList<>();
