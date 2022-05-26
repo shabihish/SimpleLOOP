@@ -81,7 +81,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
             return true;
         if(t1 instanceof FptrType)
         {
-
             if (!SubtypeChecking(((FptrType) t1).getReturnType(), ((FptrType) t2).getReturnType()))
                 return false;
             ArrayList<Type> arg1 = ((FptrType) t1).getArgumentsTypes();
@@ -92,9 +91,9 @@ public class ExpressionTypeChecker extends Visitor<Type> {
                 if (!SubtypeChecking(arg1.get(i), arg2.get(i)))
                     return false;
             }
-
             return true;
         }
+
         if(t1 instanceof ClassType && t2 instanceof ClassType) {
             if (((ClassType) t1).getClassName().getName().equals(((ClassType) t2).getClassName().getName())){
                 return true;
@@ -112,7 +111,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
             return true;
         return false;
 
-
     }
     public boolean TypesMatch(Type firstType,Type secondType){
 
@@ -120,8 +118,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
     }
 
     public boolean isLvalue(Expression expression){
-
-
         boolean tmp = this.LValueVisitor;
         this.LValueVisitor = true;
         this.isExpressionLValue = true;
@@ -179,7 +175,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
                 return new NoType();
             else if((firstExprType instanceof IntType) && (secondExprType instanceof IntType))
                 return new BoolType();
-
         }
 
         else if((opt == BinaryOperator.add) || (opt == BinaryOperator.sub) ||
@@ -195,7 +190,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
                 return new NoType();
             else if((firstExprType instanceof IntType) && (secondExprType instanceof IntType))
                 return new IntType();
-
         }
 
         else if((opt == BinaryOperator.or) || (opt == BinaryOperator.and)) {
@@ -210,9 +204,7 @@ public class ExpressionTypeChecker extends Visitor<Type> {
             else if((firstExprType instanceof BoolType) && (secondExprType instanceof BoolType))
                 return new BoolType();
         }
-
         else if(opt == BinaryOperator.assign) {
-
             boolean Lvalue = this.isLvalue(firstExpr);
             boolean match = this.TypesMatch(secondExprType, firstExprType);
             if(!Lvalue) {
@@ -269,7 +261,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
                     }
                 }
             }
-
         }
         catch (ItemNotFoundException e){
             newClassInstance.addError(new ClassNotDeclared(newClassInstance.getLine(), classname));
@@ -304,7 +295,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         {
             boolean flag = true;
             boolean leftVal = this.isLvalue(unaryExpression.getOperand());
-
             if(!leftVal && !this.LValueVisitor)
             {
 
@@ -324,7 +314,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         }
         unaryExpression.addError(new UnsupportedOperandType(unaryExpression.getLine(), opt.name()));
         return new NoType();
-
     }
 
     @Override
@@ -333,7 +322,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         this.isExpressionLValue = false;
         Type instanceType = methodCall.getInstance().accept(this);
         ArrayList<Expression> args = methodCall.getArgs();
-
         if(instanceType instanceof FptrType) {
             boolean flag = false;
             if (((FptrType) instanceType).getReturnType() instanceof NullType ) {
@@ -367,7 +355,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         }
     }
     public boolean checkTypeValidation(Type type, Node node){
-
         if(!(type instanceof ClassType || type instanceof FptrType || type instanceof ArrayType))
             return true;
         if(type instanceof ArrayType) {
@@ -375,7 +362,11 @@ public class ExpressionTypeChecker extends Visitor<Type> {
             Type elementType = ((ArrayType)type).getType();
             for(Expression expr : dims)
             {
-
+                if( expr instanceof IntValue && ((IntValue) expr).getConstant() == 0)
+                {
+                    node.addError(new CannotHaveEmptyArray(node.getLine()));
+                    return false;
+                }
             }
             if(dims.size() == 0) {
                 node.addError(new CannotHaveEmptyArray(node.getLine()));
@@ -429,7 +420,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
     public Type visit(Identifier identifier) {
         //Todo
         try {
-           
             ClassSymbolTableItem classSymbolTableItem = (ClassSymbolTableItem) SymbolTable.root.getItem(ClassSymbolTableItem.START_KEY + this.currClass.getClassName().getName(), true);
             SymbolTable classSymbolTable = classSymbolTableItem.getClassSymbolTable();
             MethodSymbolTableItem methodSymbolTableItem = (MethodSymbolTableItem) classSymbolTable.getItem(MethodSymbolTableItem.START_KEY + this.currMethod.getMethodName().getName(), true);
@@ -442,8 +432,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
             return new NoType();
         }
         catch (ItemNotFoundException e) {
-
-
             if(!this.LValueVisitor)
                 identifier.addError(new VarNotDeclared(identifier.getLine(), identifier.getName()));
             return new NoType();
@@ -455,11 +443,9 @@ public class ExpressionTypeChecker extends Visitor<Type> {
     //need check
     public Type visit(ArrayAccessByIndex arrayAccessByIndex) {
         //Todo
-
         Type instanceType = arrayAccessByIndex.getInstance().accept(this);
         boolean tmp = this.isExpressionLValue;
         Type indexType = arrayAccessByIndex.getIndex().accept(this);
-
         this.isExpressionLValue = tmp;
         if(!(instanceType instanceof ArrayType || instanceType instanceof NoType))
             if(!this.LValueVisitor)
@@ -470,10 +456,25 @@ public class ExpressionTypeChecker extends Visitor<Type> {
                 arrayAccessByIndex.addError(new ArrayIndexNotInt(arrayAccessByIndex.getLine()));
             return new NoType();
         }
-
         if(instanceType instanceof ArrayType)
         {
-           return ((ArrayType)instanceType).getType();
+            ArrayList<Expression> dims = ((ArrayType) instanceType).getDimensions();
+            if(dims.size() < 1)
+            {
+                if(!this.LValueVisitor)
+                    arrayAccessByIndex.addError(new AccessByIndexOnNoneArray(arrayAccessByIndex.getLine()));
+                return new NoType();
+            }
+            if(dims.size() == 1)
+            {
+                return ((ArrayType)instanceType).getType();
+            }
+            else {
+                ArrayList<Expression> newDims = new ArrayList<>();
+                for(int i = 1 ; i <dims.size() ; i++)
+                    newDims.add(dims.get(i));
+                return new ArrayType(((ArrayType) instanceType).getType(), newDims);
+            }
         }
         return new NoType();
     }
@@ -541,7 +542,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
                     return new NoType();
                 }
             }
-
         }
         return new SetType();
     }
@@ -601,7 +601,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         //Todo
         this.isExpressionLValue = false;
         return new IntType();
-
     }
 
     @Override
@@ -609,17 +608,13 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         //Todo
         this.isExpressionLValue = false;
         return new BoolType();
-
     }
 
     @Override
     public Type visit(SelfClass selfClass) {
         //todo
-
         Type t = new ClassType(this.getCurrentClass().getClassName());
-
         return t;
-
     }
 
     @Override
