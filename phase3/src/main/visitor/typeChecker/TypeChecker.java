@@ -14,7 +14,9 @@ import main.ast.types.NoType;
 import main.ast.types.NullType;
 import main.ast.types.Type;
 import main.ast.types.array.ArrayType;
+import main.ast.types.functionPointer.FptrType;
 import main.ast.types.primitives.BoolType;
+import main.ast.types.primitives.ClassType;
 import main.ast.types.primitives.IntType;
 import main.ast.types.set.SetType;
 import main.compileError.typeError.*;
@@ -22,18 +24,22 @@ import main.symbolTable.utils.graph.Graph;
 import main.util.ArgPair;
 import main.visitor.*;
 
+import javax.swing.plaf.nimbus.State;
+
 public class TypeChecker extends Visitor<Void> {
+
     ExpressionTypeChecker expressionTypeChecker;
 
-    private Graph<String> classHierarchy;
+    //    private Graph<String> classHierarchy;
     private ClassDeclaration currentClass;
     private MethodDeclaration currentMethod;
 
+    // Checked
     public TypeChecker(Graph<String> classHierarchy) {
-        this.classHierarchy = classHierarchy;
         this.expressionTypeChecker = new ExpressionTypeChecker(classHierarchy);
     }
 
+    // Checked
     @Override
     public Void visit(Program program) {
         boolean isMainDefined = false;
@@ -41,148 +47,142 @@ public class TypeChecker extends Visitor<Void> {
             currentClass = classDeclaration;
             expressionTypeChecker.setCurrentClass(classDeclaration);
             classDeclaration.accept(this);
+            // TODO: Is it needed to set the values back to null?
+//            currentClass = null;
+//            expressionTypeChecker.setCurrentClass(null);
             if (classDeclaration.getClassName().getName().equals("Main"))
                 isMainDefined = true;
         }
-        if (!isMainDefined) {
-            NoMainClass noMainClass = new NoMainClass();
-            program.addError(noMainClass);
-        }
 
+        if (!isMainDefined)
+            program.addError(new NoMainClass());
+
+        // TODO: Could be reordered.
         for (VariableDeclaration variableDeclaration : program.getGlobalVariables()) {
             variableDeclaration.accept(this);
         }
         return null;
     }
 
+    // Checked
     @Override
     public Void visit(ClassDeclaration classDeclaration) {
         if (classDeclaration.getParentClassName() != null) {
-//            this.expressionTypeChecker.checkTypeValidation(new ClassType(classDeclaration.getParentClassName()), classDeclaration);
-            if (classDeclaration.getClassName().getName().equals("Main")) {
-                MainClassCantInherit exception = new MainClassCantInherit(classDeclaration.getLine());
-                classDeclaration.addError(exception);
-            }
-            if (classDeclaration.getParentClassName().getName().equals("Main")) {
-                CannotExtendFromMainClass exception = new CannotExtendFromMainClass(classDeclaration.getLine());
-                classDeclaration.addError(exception);
-            }
-        }
-        for (FieldDeclaration fieldDeclaration : classDeclaration.getFields()) {
-            fieldDeclaration.accept(this);
+            expressionTypeChecker.checkTypeValidation(new ClassType(classDeclaration.getParentClassName()), classDeclaration);
+            if (classDeclaration.getClassName().getName().equals("Main"))
+                classDeclaration.addError(new MainClassCantInherit(classDeclaration.getLine()));
+            if (classDeclaration.getParentClassName().getName().equals("Main"))
+                classDeclaration.addError(new CannotExtendFromMainClass(classDeclaration.getLine()));
         }
 
         if (classDeclaration.getClassName().getName().equals("Main")) {
-            if (classDeclaration.getConstructor() == null) {
-                NoConstructorInMainClass exception = new NoConstructorInMainClass(classDeclaration);
-                classDeclaration.addError(exception);
-            } else if (classDeclaration.getConstructor().getArgs().size() != 0) {
-                MainConstructorCantHaveArgs exception = new MainConstructorCantHaveArgs(classDeclaration.getLine());
-                classDeclaration.addError(exception);
-            }
+            if (classDeclaration.getConstructor() == null)
+                classDeclaration.addError(new NoConstructorInMainClass(classDeclaration));
+            else if (classDeclaration.getConstructor().getArgs().size() != 0)
+                classDeclaration.addError(new MainConstructorCantHaveArgs(classDeclaration.getLine()));
         }
 
+        // TODO: Double check the correctness.
         if (classDeclaration.getConstructor() != null) {
-            this.expressionTypeChecker.setCurrentMethod(classDeclaration.getConstructor());
+            expressionTypeChecker.setCurrentMethod(classDeclaration.getConstructor());
+            currentMethod = classDeclaration.getConstructor();
             classDeclaration.getConstructor().accept(this);
         }
 
         for (MethodDeclaration methodDeclaration : classDeclaration.getMethods()) {
-            this.expressionTypeChecker.setCurrentMethod(methodDeclaration);
+            expressionTypeChecker.setCurrentMethod(methodDeclaration);
+            currentMethod = methodDeclaration;
             methodDeclaration.accept(this);
-            boolean doesReturn = methodDeclaration.getDoesReturn();
-
-            if (methodDeclaration.getReturnType() instanceof NullType && doesReturn) {
-                MissingReturnStatement exception = new MissingReturnStatement(methodDeclaration);
-                methodDeclaration.addError(exception);
-            }
-
-            if (!(methodDeclaration.getReturnType() instanceof NullType) && !doesReturn) {
-                VoidMethodHasReturn exception = new VoidMethodHasReturn(methodDeclaration);
-                methodDeclaration.addError(exception);
-            }
+//            boolean doesReturn = methodDeclaration.getDoesReturn();
+//
+//            if (methodDeclaration.getReturnType() instanceof NullType && doesReturn) {
+//                MissingReturnStatement exception = new MissingReturnStatement(methodDeclaration);
+//                methodDeclaration.addError(exception);
+//            }
+//
+//            if (!(methodDeclaration.getReturnType() instanceof NullType) && !doesReturn) {
+//                VoidMethodHasReturn exception = new VoidMethodHasReturn(methodDeclaration);
+//                methodDeclaration.addError(exception);
+//            }
+        }
+        for (FieldDeclaration fieldDeclaration : classDeclaration.getFields()) {
+            fieldDeclaration.accept(this);
         }
         return null;
     }
 
+    // Checked
     @Override
     public Void visit(ConstructorDeclaration constructorDeclaration) {
-//        ((MethodDeclaration) constructorDeclaration).accept(this);
-        this.visit((MethodDeclaration) constructorDeclaration);
+        //TODO: Does this work?
+        ((MethodDeclaration) constructorDeclaration).accept(this);
         return null;
     }
 
+    // Checked
     @Override
     public Void visit(MethodDeclaration methodDeclaration) {
-//        this.expressionTypeChecker.(methodDeclaration.getReturnType(), methodDeclaration);
-
+        expressionTypeChecker.checkTypeValidation(methodDeclaration.getReturnType(), methodDeclaration);
         for (ArgPair arg : methodDeclaration.getArgs()) {
             arg.getVariableDeclaration().accept(this);
             if (arg.getDefaultValue() == null)
                 continue;
-            if (expressionTypeChecker.SubtypeChecking(arg.getDefaultValue().accept(expressionTypeChecker), arg.getVariableDeclaration().getType())) {
+            // TODO: Is subtyping also applicable here?
+            if (!expressionTypeChecker.SubtypeChecking(arg.getDefaultValue().accept(expressionTypeChecker), arg.getVariableDeclaration().getType())) {
                 // TODO: Check if line checking is correct
-                UnsupportedOperandType exception = new UnsupportedOperandType(arg.getVariableDeclaration().getLine(), BinaryOperator.assign.name());
-                methodDeclaration.addError(exception);
+                // TODO: Check if the error type's as expected
+                methodDeclaration.addError(new UnsupportedOperandType(arg.getVariableDeclaration().getLine(), BinaryOperator.assign.name()));
             }
         }
+
         for (VariableDeclaration varDeclaration : methodDeclaration.getLocalVars()) {
             varDeclaration.accept(this);
         }
 
-        boolean hasReturned = false;
+//        boolean hasReturned = false;
         for (Statement statement : methodDeclaration.getBody()) {
-
             statement.accept(this);
-            if (hasReturned) {
-                UnreachableStatements exception = new UnreachableStatements(statement);
-                statement.addError(exception);
-            }
-            if (statement instanceof ReturnStmt) {
-                hasReturned = true;
-
-                Type returnType = ((ReturnStmt) statement).getReturnedExpr().accept(expressionTypeChecker);
-                if (!expressionTypeChecker.SubtypeChecking(returnType, methodDeclaration.getReturnType())) {
-                    ReturnValueNotMatchMethodReturnType exception = new ReturnValueNotMatchMethodReturnType((ReturnStmt) statement);
-                    methodDeclaration.addError(exception);
-                }
-            }
+//            if (hasReturned) {
+//                UnreachableStatements exception = new UnreachableStatements(statement);
+//                statement.addError(exception);
+//            }
+//            if (statement instanceof ReturnStmt) {
+//                hasReturned = true;
         }
         return null;
     }
 
+    // Checked
     @Override
     public Void visit(FieldDeclaration fieldDeclaration) {
         fieldDeclaration.getVarDeclaration().accept(this);
         return null;
     }
 
+    // Checked
     @Override
     public Void visit(VariableDeclaration varDeclaration) {
-        this.expressionTypeChecker.checkTypeValidation(varDeclaration.getType(), varDeclaration);
+        expressionTypeChecker.checkTypeValidation(varDeclaration.getType(), varDeclaration);
         return null;
     }
 
+    // Checked
     @Override
     public Void visit(AssignmentStmt assignmentStmt) {
         Type firstType = assignmentStmt.getlValue().accept(expressionTypeChecker);
         Type secondType = assignmentStmt.getrValue().accept(expressionTypeChecker);
-        boolean isFirstLvalue = expressionTypeChecker.isLvalue(assignmentStmt.getlValue());
-        if (!isFirstLvalue) {
-            LeftSideNotLvalue exception = new LeftSideNotLvalue(assignmentStmt.getLine());
-            assignmentStmt.addError(exception);
-        }
-        boolean isSubtype = expressionTypeChecker.SubtypeChecking(firstType, secondType);
-        if (!isSubtype && !(firstType instanceof NoType && secondType instanceof NoType)) {
-            UnsupportedOperandType exception = new UnsupportedOperandType(assignmentStmt.getLine(), BinaryOperator.assign.name());
-            assignmentStmt.addError(exception);
-            return null;
-        }
+        boolean isLeftLValue = expressionTypeChecker.isLvalue(assignmentStmt.getlValue());
+        if (!isLeftLValue)
+            assignmentStmt.addError(new LeftSideNotLvalue(assignmentStmt.getLine()));
+
+        if (!expressionTypeChecker.SubtypeChecking(secondType, firstType) && !(firstType instanceof NoType || secondType instanceof NoType))
+            assignmentStmt.addError(new UnsupportedOperandType(assignmentStmt.getLine(), BinaryOperator.assign.name()));
         return null;
     }
 
     // TODO: Add code for non reachable statements exception
     // TODO: Add code for return state tracking
+    // Checked
     @Override
     public Void visit(BlockStmt blockStmt) {
         for (Statement statement : blockStmt.getStatements())
@@ -190,73 +190,78 @@ public class TypeChecker extends Visitor<Void> {
         return null;
     }
 
+    // Checked
     @Override
     public Void visit(ConditionalStmt conditionalStmt) {
         Type condType = conditionalStmt.getCondition().accept(expressionTypeChecker);
-        if (!(condType instanceof BoolType || condType instanceof NoType)) {
-            ConditionNotBool exception = new ConditionNotBool(conditionalStmt.getLine());
-            conditionalStmt.addError(exception);
+        if (!(condType instanceof BoolType || condType instanceof NoType))
+            conditionalStmt.addError(new ConditionNotBool(conditionalStmt.getLine()));
+        conditionalStmt.getThenBody().accept(this);
+        if (conditionalStmt.getElsif() != null) {
+            for (ElsifStmt elsifStmt : conditionalStmt.getElsif())
+                elsifStmt.accept(this);
         }
-//        RetConBrk thenRetConBrk = conditionalStmt.getThenBody().accept(this);
-//        if(conditionalStmt.getElseBody() != null) {
-//            RetConBrk elseRetConBrk = conditionalStmt.getElseBody().accept(this);
-//            return new RetConBrk(thenRetConBrk.doesReturn && elseRetConBrk.doesReturn,
-//                    thenRetConBrk.doesBreakContinue && elseRetConBrk.doesBreakContinue);
-//        }
+        if (conditionalStmt.getElseBody() != null) {
+            conditionalStmt.getElseBody().accept(this);
+        }
         return null;
     }
 
+    // Checked
     @Override
     public Void visit(ElsifStmt elsifStmt) {
+        Type condType = elsifStmt.getCondition().accept(expressionTypeChecker);
+        if (!(condType instanceof BoolType || condType instanceof NoType))
+            elsifStmt.addError(new ConditionNotBool(elsifStmt.getLine()));
+        elsifStmt.getThenBody().accept(this);
         return null;
     }
 
+    // TODO: Is setIsInMethodCallStmt really needed?
+    // Checked
     @Override
     public Void visit(MethodCallStmt methodCallStmt) {
-//        expressionTypeChecker.setIsInMethodCallStmt(true);
-
         methodCallStmt.getMethodCall().accept(expressionTypeChecker);
-//        expressionTypeChecker.setIsInMethodCallStmt(false);
         return null;
     }
 
-    //TODO: Check correctness
+    // TODO: Check correctness
+    // Checked
     @Override
     public Void visit(PrintStmt print) {
         Type argType = print.getArg().accept(expressionTypeChecker);
         if (!(argType instanceof IntType || argType instanceof ArrayType || argType instanceof SetType ||
-                argType instanceof BoolType || argType instanceof NoType)) {
-            UnsupportedTypeForPrint exception = new UnsupportedTypeForPrint(print.getLine());
-            print.addError(exception);
-        }
+                argType instanceof BoolType || argType instanceof NoType))
+            print.addError(new UnsupportedTypeForPrint(print.getLine()));
         return null;
     }
 
 
+    // Checked
     @Override
     public Void visit(ReturnStmt returnStmt) {
+        if (!expressionTypeChecker.SubtypeChecking(returnStmt.getReturnedExpr().accept(expressionTypeChecker), currentMethod.getReturnType()))
+            returnStmt.addError(new ReturnValueNotMatchMethodReturnType(returnStmt));
         return null;
     }
 
+    // Checked
     @Override
     public Void visit(EachStmt eachStmt) {
         Type varType = eachStmt.getVariable().accept(expressionTypeChecker);
         Type listType = eachStmt.getList().accept(expressionTypeChecker);
         // TODO: Could listType also be an instance of SetType?
-
-        //I don know why the hell instanceof is not working
-
-        if (!(listType.toString().equals("ArrayType") || listType instanceof NoType)) {
-            EachCantIterateNoneArray exception = new EachCantIterateNoneArray(eachStmt.getLine());
-            eachStmt.addError(exception);
-            return null;
-        }
+        //I dont know why the hell instanceof is not working
+        if (!(listType instanceof ArrayType || listType instanceof NoType))
+            eachStmt.addError(new EachCantIterateNoneArray(eachStmt.getLine()));
+        return null;
+    }
 
 
-        boolean typesMatch = expressionTypeChecker.VarTypeMatchArrayType(listType, varType);
-        if (!typesMatch) {
-            eachStmt.addError(new EachVarNotMatchList(eachStmt));
-        }
+//        boolean typesMatch = expressionTypeChecker.VarTypeMatchArrayType(listType, varType);
+//        if (!typesMatch) {
+//            eachStmt.addError(new EachVarNotMatchList(eachStmt));
+//        }
         /* else if(!(listType instanceof NoType)) {
             ArrayList<Type> types = new ArrayList<>();
             for(ArrayType listNameType : ((ArrayType) listType).getElementsTypes())
@@ -274,9 +279,8 @@ public class TypeChecker extends Visitor<Void> {
         this.isInFor = true;
         foreachStmt.getBody().accept(this);
         this.isInFor = lastIsInFor;*/
-        return null;
-    }
 
+    // Checked
     @Override
     public Void visit(SetDelete setDelete) {
 //        Type argType = setDelete.getElementArg().accept(expressionTypeChecker);
@@ -286,24 +290,25 @@ public class TypeChecker extends Visitor<Void> {
         return null;
     }
 
-    // Double check if having a NoType is also ok
-    // Double check the line given
-    // Are there any other possible combinations?
+    // TODO: Double check if having a NoType is also ok
+    // TODO: Double check the line given
+    // TODO: Are there any other possible combinations?
+    // Checked
     @Override
     public Void visit(SetMerge setMerge) {
         if (setMerge.getElementArgs().size() == 1) {
             Expression arg = setMerge.getElementArgs().get(0);
             Type argType = arg.accept(expressionTypeChecker);
-            if (arg instanceof Identifier) {
+            /*if (arg instanceof Identifier) {
                 if (!(argType instanceof SetType || argType instanceof NoType)) {
                     MergeInputNotSet exception = new MergeInputNotSet(setMerge.getLine());
                     setMerge.addError(exception);
                 }
-            } else if (!(arg instanceof SetNew || argType instanceof NoType)) {
-                MergeInputNotSet exception = new MergeInputNotSet(setMerge.getLine());
-                setMerge.addError(exception);
-            }
+            } else */
+            if (!(argType instanceof SetType || argType instanceof IntType || argType instanceof NoType))
+                setMerge.addError(new MergeInputNotSet(setMerge.getLine()));
         } else {
+            //TODO: Is comma-seperated-ints == single-int the case?
             for (Expression expression : setMerge.getElementArgs()) {
                 Type type = expression.accept(expressionTypeChecker);
                 if (!(type instanceof IntType || type instanceof NoType)) {
@@ -316,12 +321,12 @@ public class TypeChecker extends Visitor<Void> {
         return null;
     }
 
+    // Checked
     @Override
     public Void visit(SetAdd setAdd) {
         Type type = setAdd.getElementArg().accept(expressionTypeChecker);
-        if (!(type instanceof IntType || type instanceof NoType)) {
+        if (!(type instanceof IntType || type instanceof NoType))
             setAdd.addError(new AddInputNotInt(setAdd.getLine()));
-        }
         return null;
     }
     //TODO: Is setInclude also needed?
