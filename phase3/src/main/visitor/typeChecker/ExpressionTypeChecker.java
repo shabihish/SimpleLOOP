@@ -362,12 +362,14 @@ public class ExpressionTypeChecker extends Visitor<Type> {
             Type elementType = ((ArrayType)type).getType();
             for(Expression expr : dims)
             {
+                // TODO: What if expr is not an instance of IntValue?
                 if( expr instanceof IntValue && ((IntValue) expr).getConstant() == 0)
                 {
                     node.addError(new CannotHaveEmptyArray(node.getLine()));
                     return false;
                 }
             }
+            // TODO: Does this case ever happen?
             if(dims.size() == 0) {
                 node.addError(new CannotHaveEmptyArray(node.getLine()));
                 return false;
@@ -418,7 +420,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
 
     @Override
     public Type visit(Identifier identifier) {
-        //Todo
         try {
             ClassSymbolTableItem classSymbolTableItem = (ClassSymbolTableItem) SymbolTable.root.getItem(ClassSymbolTableItem.START_KEY + this.currClass.getClassName().getName(), true);
             SymbolTable classSymbolTable = classSymbolTableItem.getClassSymbolTable();
