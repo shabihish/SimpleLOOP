@@ -115,7 +115,8 @@ public class TypeChecker extends Visitor<Void> {
     @Override
     public Void visit(ConstructorDeclaration constructorDeclaration) {
         //TODO: Does this work?
-        ((MethodDeclaration) constructorDeclaration).accept(this);
+//        ((MethodDeclaration) constructorDeclaration).accept(this);
+        visit((MethodDeclaration) constructorDeclaration);
         return null;
     }
 
