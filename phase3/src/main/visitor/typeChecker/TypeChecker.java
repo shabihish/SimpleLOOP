@@ -253,8 +253,19 @@ public class TypeChecker extends Visitor<Void> {
         Type listType = eachStmt.getList().accept(expressionTypeChecker);
         // TODO: Could listType also be an instance of SetType?
         //I dont know why the hell instanceof is not working
-        if (!(listType instanceof ArrayType || listType instanceof NoType))
-            eachStmt.addError(new EachCantIterateNoneArray(eachStmt.getLine()));
+       // if (!(listType instanceof ArrayType || listType instanceof NoType))
+           //eachStmt.addError(new EachCantIterateNoneArray(eachStmt.getLine()));
+
+        if(!(listType.toString().equals("ArrayType") || listType instanceof NoType)) {
+            EachCantIterateNoneArray exception = new EachCantIterateNoneArray(eachStmt.getLine());
+            eachStmt.addError(exception);
+            return null;
+        }
+        boolean typesMatch = expressionTypeChecker.VarTypeMatchArrayType(listType,varType);
+        if(!typesMatch)
+        {
+            eachStmt.addError(new EachVarNotMatchList(eachStmt));
+        }
         return null;
     }
 
