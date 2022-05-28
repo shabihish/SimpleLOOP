@@ -50,6 +50,7 @@ public class ExpressionTypeChecker extends Visitor<Type> {
     private final boolean checkingMemberAccess = false;
     private final boolean checkingListIndex = false;
 
+
     private boolean isExpressionLValue = true;
     public boolean LValueVisitor = false;
 
@@ -86,6 +87,7 @@ public class ExpressionTypeChecker extends Visitor<Type> {
     public boolean SubtypeChecking(Type t1, Type t2) {
         if (t1 instanceof NoType)
             return true;
+
         if (t1 instanceof NullType && (t2 instanceof FptrType || t2 instanceof ClassType))
             return true;
         if (t1 instanceof FptrType) {
@@ -153,8 +155,10 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         Expression secondExpr = binaryExpression.getSecondOperand();
         Type firstExprType = firstExpr.accept(this);
         Type secondExprType = secondExpr.accept(this);
+
         if (firstExprType instanceof NoType && secondExprType instanceof NoType)
             return new NoType();
+
 
         else if (opt.equals(BinaryOperator.eq)) {
             if ((IsEqualityExprType(firstExprType) && !IsEqualityExprType(secondExprType)) || (IsEqualityExprType(secondExprType) && !IsEqualityExprType(firstExprType))) {
@@ -164,7 +168,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
             }
             if (secondExprType instanceof NoType || secondExprType instanceof NoType)
                 return new NoType();
-
 
             if (TypesMatch(firstExprType, secondExprType))
                 return new BoolType();
@@ -215,6 +218,7 @@ public class ExpressionTypeChecker extends Visitor<Type> {
             if (Lvalue && match)
                 return secondExprType;
         }
+
         UnsupportedOperandType exception = new UnsupportedOperandType(binaryExpression.getLine(), opt.name());
         binaryExpression.addError(exception);
         return new NoType();
@@ -312,12 +316,15 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         //Todo
         this.isExpressionLValue = false;
         Type instanceType = methodCall.getInstance().accept(this);
+
         ArrayList<Expression> args = methodCall.getArgs();
+
         if (instanceType instanceof FptrType) {
             boolean flag = false;
-            if (((FptrType) instanceType).getReturnType() instanceof NullType) {
+            if (((FptrType) instanceType).getReturnType() instanceof VoidType ) {
                 flag = true;
                 methodCall.addError(new CantUseValueOfVoidMethod(methodCall.getLine()));
+
             }
             ArrayList<Type> argTypes = ((FptrType) instanceType).getArgumentsTypes();
             ArrayList<Type> argsWithType = new ArrayList<>();
@@ -335,7 +342,7 @@ public class ExpressionTypeChecker extends Visitor<Type> {
                 }
             }
             if (flag)
-                return new NoType();
+                return new VoidType();
             return ((FptrType) instanceType).getReturnType();
         } else if (instanceType instanceof NoType)
             return new NoType();
