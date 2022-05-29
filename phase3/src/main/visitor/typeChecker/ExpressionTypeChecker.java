@@ -303,12 +303,16 @@ public boolean VarTypeMatchArrayType(Type t1, Type t2)
         }
         if (opt == UnaryOperator.postdec || opt == UnaryOperator.postinc) {
             boolean flag = true;
-            boolean leftVal = this.isLvalue(unaryExpression.getOperand());
-            if (!leftVal && !this.LValueVisitor) {
+
+            if(!this.LValueVisitor)
+                flag = this.isLvalue(unaryExpression.getOperand());
+
+            if (!flag && !this.LValueVisitor) {
 
                 unaryExpression.addError(new IncDecOperandNotLvalue(unaryExpression.getLine(), opt.name()));
                 flag = false;
             }
+            
             if (operandType instanceof IntType) {
                 if (flag)
                     return operandType;
