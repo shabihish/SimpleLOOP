@@ -294,11 +294,13 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         if(opt == UnaryOperator.postdec || opt == UnaryOperator.postinc)
         {
             boolean flag = true;
-            boolean leftVal = this.isLvalue(unaryExpression.getOperand());
-            if(!leftVal && !this.LValueVisitor)
-            {
 
-                unaryExpression.addError(new IncDecOperandNotLvalue(unaryExpression.getLine(),opt.name()));
+            if(!this.LValueVisitor)
+                flag = this.isLvalue(unaryExpression.getOperand());
+
+            if (!flag && !this.LValueVisitor) {
+
+                unaryExpression.addError(new IncDecOperandNotLvalue(unaryExpression.getLine(), opt.name()));
                 flag = false;
             }
             if(operandType instanceof IntType)
