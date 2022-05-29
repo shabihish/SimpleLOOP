@@ -85,10 +85,14 @@ public class ExpressionTypeChecker extends Visitor<Type> {
     }
 
 
-    public boolean VarTypeMatchArrayType(Type t1, Type t2) {
-        if (t1 instanceof NoType || t2 instanceof NoType)
+    
+public boolean VarTypeMatchArrayType(Type t1, Type t2)
+    {
+        if(t1 instanceof NoType || t2 instanceof NoType)
             return true;
-        return SubtypeChecking(((ArrayType) t1).getType(), t2);
+        if(SubtypeChecking(((ArrayType)t1).getType(), t2))
+            return true;
+        return false;
     }
 
     public boolean SubtypeChecking(Type t1, Type t2) {
@@ -553,8 +557,9 @@ public class ExpressionTypeChecker extends Visitor<Type> {
     }
 
     @Override
-    public Type visit(SetInclude setInclude) {
+   public Type visit(SetInclude setInclude) {
         //Todo
+        Type setArg = setInclude.getSetArg().accept(this);
         Type IncludeExprType = setInclude.getElementArg().accept(this);
         if (!(IncludeExprType instanceof IntType || IncludeExprType instanceof NoType)) {
             setInclude.addError(new SetIncludeInputNotInt(setInclude.getLine()));
@@ -568,17 +573,21 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         //Todo
         Type LeftExprType = rangeExpression.getLeftExpression().accept(this);
         Type RightExprType = rangeExpression.getRightExpression().accept(this);
-        // TODO: Also check for right side case.
+
         if (!(LeftExprType instanceof IntType || LeftExprType instanceof NoType)) {
+
             rangeExpression.addError(new EachRangeNotInt(rangeExpression.getLine()));
             return new NoType();
         }
         // Todo: Is it needed to also check for the right side being of NoType?
-        if (LeftExprType instanceof IntType && RightExprType instanceof IntType) {
+        if (RightExprType instanceof IntType) {
+
             ArrayList<Expression> dims = new ArrayList<>();
             dims.add(new IntValue(1));
             return new ArrayType(new IntType(), dims);
         }
+        if(LeftExprType instanceof NoType && RightExprType instanceof NoType)
+            return new NoType();
         rangeExpression.addError(new EachRangeNotInt(rangeExpression.getLine()));
         return new NoType();
     }
