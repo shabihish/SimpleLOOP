@@ -27,10 +27,9 @@ public class SimpleLOOPCompiler {
 
         int numberOfErrors = program.accept(errorReporter);
         if(numberOfErrors > 0) {
-            System.out.println("\n" + numberOfErrors + " errors detected");
-            System.exit(1);
+            return;
         }
-
+        // TODO: Should also the AST be printed in case of no errors?
         if(numberOfErrors == 0)
             program.accept(astTreePrinter);
 

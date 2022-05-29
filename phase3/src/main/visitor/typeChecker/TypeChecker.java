@@ -172,9 +172,13 @@ public class TypeChecker extends Visitor<Void> {
     public Void visit(AssignmentStmt assignmentStmt) {
         Type firstType = assignmentStmt.getlValue().accept(expressionTypeChecker);
         Type secondType = assignmentStmt.getrValue().accept(expressionTypeChecker);
-        boolean isLeftLValue = expressionTypeChecker.isLvalue(assignmentStmt.getlValue());
-        if (!isLeftLValue)
-            assignmentStmt.addError(new LeftSideNotLvalue(assignmentStmt.getLine()));
+
+        // TODO: Verify the consistency of this conditioning
+        if (!(firstType instanceof NoType)) {
+            boolean isLeftLValue = expressionTypeChecker.isLvalue(assignmentStmt.getlValue());
+            if (!isLeftLValue)
+                assignmentStmt.addError(new LeftSideNotLvalue(assignmentStmt.getLine()));
+        }
 
         if (!expressionTypeChecker.SubtypeChecking(secondType, firstType) && !(firstType instanceof NoType || secondType instanceof NoType))
             assignmentStmt.addError(new UnsupportedOperandType(assignmentStmt.getLine(), BinaryOperator.assign.name()));
@@ -222,7 +226,9 @@ public class TypeChecker extends Visitor<Void> {
     // Checked
     @Override
     public Void visit(MethodCallStmt methodCallStmt) {
+        expressionTypeChecker.setIsInMethodCallStmt(true);
         methodCallStmt.getMethodCall().accept(expressionTypeChecker);
+        expressionTypeChecker.setIsInMethodCallStmt(false);
         return null;
     }
 
@@ -253,22 +259,22 @@ public class TypeChecker extends Visitor<Void> {
         Type listType = eachStmt.getList().accept(expressionTypeChecker);
         // TODO: Could listType also be an instance of SetType?
         //I dont know why the hell instanceof is not working
-       // if (!(listType instanceof ArrayType || listType instanceof NoType))
-           //eachStmt.addError(new EachCantIterateNoneArray(eachStmt.getLine()));
+        // if (!(listType instanceof ArrayType || listType instanceof NoType))
+        //eachStmt.addError(new EachCantIterateNoneArray(eachStmt.getLine()));
 
-        if(!(listType.toString().equals("ArrayType") || listType instanceof NoType)) {
-            EachCantIterateNoneArray exception = new EachCantIterateNoneArray(eachStmt.getLine());
-            eachStmt.addError(exception);
+        if (!(listType.toString().equals("ArrayType") || listType instanceof NoType)) {
+            eachStmt.addError(new EachCantIterateNoneArray(eachStmt.getLine()));
             return null;
         }
-        boolean typesMatch = expressionTypeChecker.VarTypeMatchArrayType(listType,varType);
-        if(!typesMatch)
-        {
+        boolean typesMatch = expressionTypeChecker.VarTypeMatchArrayType(listType, varType);
+        if (!typesMatch) {
             eachStmt.addError(new EachVarNotMatchList(eachStmt));
+            // TODO: Shouldn't also return in here?
         }
+
+        eachStmt.getBody().accept(this);
         return null;
     }
-
 
 //        boolean typesMatch = expressionTypeChecker.VarTypeMatchArrayType(listType, varType);
 //        if (!typesMatch) {

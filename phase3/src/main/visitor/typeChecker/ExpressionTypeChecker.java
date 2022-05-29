@@ -46,6 +46,8 @@ public class ExpressionTypeChecker extends Visitor<Type> {
     private ClassDeclaration currClass;
     private MethodDeclaration currMethod;
 
+    private boolean isInMethodCallStmt;
+
     // TODO: Are these fields needed?
     private final boolean checkingMemberAccess = false;
     private final boolean checkingListIndex = false;
@@ -70,22 +72,28 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         return currMethod;
     }
 
+    public void setIsInMethodCallStmt(boolean cond) {
+        isInMethodCallStmt = cond;
+    }
+
+    public boolean getIsInMethodCallStmt() {
+        return isInMethodCallStmt;
+    }
+
     public ExpressionTypeChecker(Graph<String> classHierarchy) {
         this.classHierarchy = classHierarchy;
     }
 
 
-
-    public boolean VarTypeMatchArrayType(Type t1, Type t2)
-    {
-        if(SubtypeChecking(((ArrayType)t1).getType(), t2))
+    public boolean VarTypeMatchArrayType(Type t1, Type t2) {
+        if (t1 instanceof NoType || t2 instanceof NoType)
             return true;
-        return false;
+        return SubtypeChecking(((ArrayType) t1).getType(), t2);
     }
 
-
     public boolean SubtypeChecking(Type t1, Type t2) {
-        if (t1 instanceof NoType)
+        // TODO: Check the consistency of the second cond
+        if (t1 instanceof NoType || t2 instanceof NoType)
             return true;
 
         if (t1 instanceof NullType && (t2 instanceof FptrType || t2 instanceof ClassType))
@@ -321,7 +329,7 @@ public class ExpressionTypeChecker extends Visitor<Type> {
 
         if (instanceType instanceof FptrType) {
             boolean flag = false;
-            if (((FptrType) instanceType).getReturnType() instanceof VoidType ) {
+            if (((FptrType) instanceType).getReturnType() instanceof VoidType && !isInMethodCallStmt) {
                 flag = true;
                 methodCall.addError(new CantUseValueOfVoidMethod(methodCall.getLine()));
 
@@ -382,8 +390,8 @@ public class ExpressionTypeChecker extends Visitor<Type> {
 //                node.addError(new ClassNotDeclared(((ClassDeclaration) node).getLine(), className));
 //                return false;
 //            }
-            String className = ((ClassType)type).getClassName().getName();
-            if(!this.classHierarchy.doesGraphContainNode(className)) {
+            String className = ((ClassType) type).getClassName().getName();
+            if (!this.classHierarchy.doesGraphContainNode(className)) {
                 ClassNotDeclared exception = new ClassNotDeclared(node.getLine(), className);
                 node.addError(exception);
                 return false;
@@ -536,12 +544,10 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         ArrayList<Expression> types = new ArrayList<>();
         for (Expression element : setNew.getArgs()) {
             Type elementType = element.accept(this);
-            if (!(elementType instanceof IntType)) {
-                if (!(elementType instanceof NoType)) {
+            if (!(elementType instanceof IntType || elementType instanceof NoType)) {
                     setNew.addError(new NewInputNotSet(setNew.getLine()));
                     return new NoType();
                 }
-            }
         }
         return new SetType();
     }
@@ -562,6 +568,7 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         //Todo
         Type LeftExprType = rangeExpression.getLeftExpression().accept(this);
         Type RightExprType = rangeExpression.getRightExpression().accept(this);
+        // TODO: Also check for right side case.
         if (!(LeftExprType instanceof IntType || LeftExprType instanceof NoType)) {
             rangeExpression.addError(new EachRangeNotInt(rangeExpression.getLine()));
             return new NoType();
