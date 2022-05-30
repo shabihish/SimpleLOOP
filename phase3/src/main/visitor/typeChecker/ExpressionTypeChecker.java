@@ -85,23 +85,21 @@ public class ExpressionTypeChecker extends Visitor<Type> {
     }
 
 
-    
-public boolean VarTypeMatchArrayType(Type t1, Type t2)
-    {
-        if(t1 instanceof NoType || t2 instanceof NoType)
+    public boolean VarTypeMatchArrayType(Type t1, Type t2) {
+        if (t1 instanceof NoType || t2 instanceof NoType)
             return true;
-        if(SubtypeChecking(((ArrayType)t1).getType(), t2))
+        if (SubtypeChecking(((ArrayType) t1).getType(), t2))
             return true;
         return false;
     }
 
     public boolean SubtypeChecking(Type t1, Type t2) {
-        // TODO: Check the consistency of the second cond
-        if (t1 instanceof NoType || t2 instanceof NoType)
+        if (t1 instanceof NoType)
             return true;
 
-        if (t1 instanceof NullType && (t2 instanceof FptrType || t2 instanceof ClassType))
+        if (t1 instanceof NullType && (t2 instanceof NullType || t2 instanceof FptrType || t2 instanceof ClassType))
             return true;
+
         if (t1 instanceof FptrType) {
             if (!SubtypeChecking(((FptrType) t1).getReturnType(), ((FptrType) t2).getReturnType()))
                 return false;
@@ -140,14 +138,17 @@ public boolean VarTypeMatchArrayType(Type t1, Type t2)
     }
 
     public boolean isLvalue(Expression expression) {
-        boolean tmp = this.LValueVisitor;
-        this.LValueVisitor = true;
-        this.isExpressionLValue = true;
+        boolean prevIsCatchErrorsActive = Node.isCatchErrorsActive;
+        boolean prevLValueVisitor = LValueVisitor;
+        Node.isCatchErrorsActive = false;
+        LValueVisitor = true;
+        isExpressionLValue = true;
         expression.accept(this);
-        this.LValueVisitor = tmp;
-        return this.isExpressionLValue;
+        boolean isLeftVal = LValueVisitor;
+        Node.isCatchErrorsActive = prevIsCatchErrorsActive;
+        LValueVisitor = prevLValueVisitor;
+        return isExpressionLValue;
     }
-
 
     // assign,
     // eq, gt, lt, add, sub
@@ -161,7 +162,7 @@ public boolean VarTypeMatchArrayType(Type t1, Type t2)
 
     public Type visit(BinaryExpression binaryExpression) {
         //Todo
-        this.isExpressionLValue = false;
+        isExpressionLValue = false;
         BinaryOperator opt = binaryExpression.getBinaryOperator();
         Expression firstExpr = binaryExpression.getFirstOperand();
         Expression secondExpr = binaryExpression.getSecondOperand();
@@ -178,7 +179,7 @@ public boolean VarTypeMatchArrayType(Type t1, Type t2)
                 binaryExpression.addError(exception);
                 return new NoType();
             }
-            if (secondExprType instanceof NoType || secondExprType instanceof NoType)
+            if (firstExprType instanceof NoType || secondExprType instanceof NoType)
                 return new NoType();
 
             if (TypesMatch(firstExprType, secondExprType))
@@ -239,7 +240,6 @@ public boolean VarTypeMatchArrayType(Type t1, Type t2)
 
     @Override
     public Type visit(NewClassInstance newClassInstance) { //just type
-        //todo
         this.isExpressionLValue = false;
         ClassType classtype = newClassInstance.getClassType();
         String classname = classtype.getClassName().getName();
@@ -247,6 +247,8 @@ public boolean VarTypeMatchArrayType(Type t1, Type t2)
         if (!classDeclared) {
             ClassNotDeclared exception = new ClassNotDeclared(newClassInstance.getLine(), classname);
             newClassInstance.addError(exception);
+            for (Expression expr : newClassInstance.getArgs())
+                expr.accept(this);
             return new NoType();
         }
         try {
@@ -285,7 +287,6 @@ public boolean VarTypeMatchArrayType(Type t1, Type t2)
     @Override
     //not, minus, postinc, postdec
     public Type visit(UnaryExpression unaryExpression) {
-        //Todo
         this.isExpressionLValue = false;
         Type operandType = unaryExpression.getOperand().accept(this);
         UnaryOperator opt = unaryExpression.getOperator();
@@ -304,7 +305,7 @@ public boolean VarTypeMatchArrayType(Type t1, Type t2)
         if (opt == UnaryOperator.postdec || opt == UnaryOperator.postinc) {
             boolean flag = true;
 
-            if(!this.LValueVisitor)
+            if (!this.LValueVisitor)
                 flag = this.isLvalue(unaryExpression.getOperand());
 
             if (!flag && !this.LValueVisitor) {
@@ -312,7 +313,7 @@ public boolean VarTypeMatchArrayType(Type t1, Type t2)
                 unaryExpression.addError(new IncDecOperandNotLvalue(unaryExpression.getLine(), opt.name()));
                 flag = false;
             }
-            
+
             if (operandType instanceof IntType) {
                 if (flag)
                     return operandType;
@@ -351,18 +352,23 @@ public boolean VarTypeMatchArrayType(Type t1, Type t2)
                 methodCall.addError(new MethodCallNotMatchDefinition(methodCall.getLine()));
                 return new NoType();
             }
+
             for (int i = 0; i < argTypes.size(); i++) {
-                if (!TypesMatch(argTypes.get(i), argsWithType.get(i))) {
+                if (!SubtypeChecking(argsWithType.get(i), argTypes.get(i))) {
                     methodCall.addError(new MethodCallNotMatchDefinition(methodCall.getLine()));
                     return new NoType();
                 }
             }
+
             if (flag)
                 return new VoidType();
             return ((FptrType) instanceType).getReturnType();
-        } else if (instanceType instanceof NoType)
+        } else if (instanceType instanceof NoType) {
+            for (int i = 0; i < args.size(); i++) {
+                args.get(i).accept(this);
+            }
             return new NoType();
-        else {
+        } else {
             methodCall.addError(new CallOnNoneCallable(methodCall.getLine()));
             return new NoType();
         }
@@ -464,9 +470,9 @@ public boolean VarTypeMatchArrayType(Type t1, Type t2)
     //need check
     public Type visit(ArrayAccessByIndex arrayAccessByIndex) {
         //Todo
+        Type indexType = arrayAccessByIndex.getIndex().accept(this);
         Type instanceType = arrayAccessByIndex.getInstance().accept(this);
         boolean tmp = this.isExpressionLValue;
-        Type indexType = arrayAccessByIndex.getIndex().accept(this);
         this.isExpressionLValue = tmp;
         if (!(instanceType instanceof ArrayType || instanceType instanceof NoType))
             if (!this.LValueVisitor)
@@ -498,9 +504,8 @@ public boolean VarTypeMatchArrayType(Type t1, Type t2)
     @Override
     //need check
     public Type visit(ObjectMemberAccess objectMemberAccess) {
-        //Todo
-
         Type instanceType = objectMemberAccess.getInstance().accept(this);
+//        Type instanceType = objectMemberAccess.get().accept(this);
 
         if (!(instanceType instanceof ClassType || instanceType instanceof NoType)) {
 
@@ -519,23 +524,20 @@ public boolean VarTypeMatchArrayType(Type t1, Type t2)
         } catch (ItemNotFoundException classNotFound) {
             return new NoType();
         }
+
         try {
-
             FieldSymbolTableItem fieldSymbolTableItem = (FieldSymbolTableItem) classSymbolTable.getItem(FieldSymbolTableItem.START_KEY + memberName, true);
-
             if (this.checkTypeExistence(fieldSymbolTableItem.getType())) {
-
                 return fieldSymbolTableItem.getType();
             }
             return new NoType();
         } catch (ItemNotFoundException memberNotField) {
             try {
-
                 MethodSymbolTableItem methodSymbolTableItem = (MethodSymbolTableItem) classSymbolTable.getItem(MethodSymbolTableItem.START_KEY + memberName, true);
                 this.isExpressionLValue = false;
                 return new FptrType(methodSymbolTableItem.getArgTypes(), methodSymbolTableItem.getReturnType());
             } catch (ItemNotFoundException memberNotFound) {
-                if (memberName.equals(className)) {
+                if (memberName == className) {
                     this.isExpressionLValue = false;
                     return new FptrType(new ArrayList<>(), new NullType());
                 }
@@ -553,23 +555,27 @@ public boolean VarTypeMatchArrayType(Type t1, Type t2)
         for (Expression element : setNew.getArgs()) {
             Type elementType = element.accept(this);
             if (!(elementType instanceof IntType || elementType instanceof NoType)) {
-                    setNew.addError(new NewInputNotSet(setNew.getLine()));
-                    return new NoType();
-                }
+                setNew.addError(new NewInputNotSet(setNew.getLine()));
+                return new NoType();
+            }
         }
         return new SetType();
     }
 
     @Override
-   public Type visit(SetInclude setInclude) {
+    public Type visit(SetInclude setInclude) {
         //Todo
         Type setArg = setInclude.getSetArg().accept(this);
+        if (!(setArg instanceof SetType || setArg instanceof NoType)) {
+            //TODO: Check
+            return new NoType();
+        }
         Type IncludeExprType = setInclude.getElementArg().accept(this);
         if (!(IncludeExprType instanceof IntType || IncludeExprType instanceof NoType)) {
             setInclude.addError(new SetIncludeInputNotInt(setInclude.getLine()));
             return new NoType();
         }
-        return IncludeExprType;
+        return new BoolType();
     }
 
     @Override
@@ -579,18 +585,16 @@ public boolean VarTypeMatchArrayType(Type t1, Type t2)
         Type RightExprType = rangeExpression.getRightExpression().accept(this);
 
         if (!(LeftExprType instanceof IntType || LeftExprType instanceof NoType)) {
-
             rangeExpression.addError(new EachRangeNotInt(rangeExpression.getLine()));
             return new NoType();
         }
         // Todo: Is it needed to also check for the right side being of NoType?
         if (RightExprType instanceof IntType) {
-
             ArrayList<Expression> dims = new ArrayList<>();
             dims.add(new IntValue(1));
             return new ArrayType(new IntType(), dims);
         }
-        if(LeftExprType instanceof NoType && RightExprType instanceof NoType)
+        if ((LeftExprType instanceof NoType || LeftExprType instanceof IntType) && (RightExprType instanceof NoType || RightExprType instanceof IntType))
             return new NoType();
         rangeExpression.addError(new EachRangeNotInt(rangeExpression.getLine()));
         return new NoType();
@@ -598,16 +602,15 @@ public boolean VarTypeMatchArrayType(Type t1, Type t2)
 
     @Override
     public Type visit(TernaryExpression ternaryExpression) {
-        //Todo
         Type ConditionType = ternaryExpression.getCondition().accept(this);
-        Type TrueExprType = ternaryExpression.getTrueExpression().accept(this);
-        Type FalseExprType = ternaryExpression.getFalseExpression().accept(this);
         if (!(ConditionType instanceof BoolType || ConditionType instanceof NoType)) {
-            ternaryExpression.addError(new UnsupportedOperandType(ternaryExpression.getLine(), TernaryOperator.ternary.name()));
+            ternaryExpression.addError(new ConditionNotBool(ternaryExpression.getLine()));
             return new NoType();
         }
+        Type TrueExprType = ternaryExpression.getTrueExpression().accept(this);
+        Type FalseExprType = ternaryExpression.getFalseExpression().accept(this);
         //TODO: Should check for operand subtyping in here or should the two expressions be of the same type exactly?
-        if (SubtypeChecking(TrueExprType, FalseExprType)) {
+        if (SubtypeChecking(TrueExprType, FalseExprType) && SubtypeChecking(FalseExprType, TrueExprType) || TrueExprType instanceof NoType || FalseExprType instanceof NoType) {
             return TrueExprType;
         }
         ternaryExpression.addError(new UnsupportedOperandType(ternaryExpression.getLine(), TernaryOperator.ternary.name()));
@@ -627,7 +630,6 @@ public boolean VarTypeMatchArrayType(Type t1, Type t2)
         this.isExpressionLValue = false;
         return new BoolType();
     }
-
 
     // TODO: How is the self.sth type propagation handled?
     @Override

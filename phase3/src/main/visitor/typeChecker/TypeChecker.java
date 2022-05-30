@@ -18,6 +18,7 @@ import main.ast.types.functionPointer.FptrType;
 import main.ast.types.primitives.BoolType;
 import main.ast.types.primitives.ClassType;
 import main.ast.types.primitives.IntType;
+import main.ast.types.primitives.VoidType;
 import main.ast.types.set.SetType;
 import main.compileError.typeError.*;
 import main.symbolTable.utils.graph.Graph;
@@ -33,6 +34,8 @@ public class TypeChecker extends Visitor<Void> {
     //    private Graph<String> classHierarchy;
     private ClassDeclaration currentClass;
     private MethodDeclaration currentMethod;
+    private boolean hasReturned = false;
+
 
     // Checked
     public TypeChecker(Graph<String> classHierarchy) {
@@ -173,12 +176,9 @@ public class TypeChecker extends Visitor<Void> {
         Type firstType = assignmentStmt.getlValue().accept(expressionTypeChecker);
         Type secondType = assignmentStmt.getrValue().accept(expressionTypeChecker);
 
-        // TODO: Verify the consistency of this conditioning
-        if (!(firstType instanceof NoType)) {
-            boolean isLeftLValue = expressionTypeChecker.isLvalue(assignmentStmt.getlValue());
-            if (!isLeftLValue)
-                assignmentStmt.addError(new LeftSideNotLvalue(assignmentStmt.getLine()));
-        }
+        boolean isLeftLValue = expressionTypeChecker.isLvalue(assignmentStmt.getlValue());
+        if (!isLeftLValue)
+            assignmentStmt.addError(new LeftSideNotLvalue(assignmentStmt.getLine()));
 
         if (!expressionTypeChecker.SubtypeChecking(secondType, firstType) && !(firstType instanceof NoType || secondType instanceof NoType))
             assignmentStmt.addError(new UnsupportedOperandType(assignmentStmt.getLine(), BinaryOperator.assign.name()));
@@ -243,10 +243,11 @@ public class TypeChecker extends Visitor<Void> {
         return null;
     }
 
-
     // Checked
     @Override
     public Void visit(ReturnStmt returnStmt) {
+        if (currentMethod.getReturnType() instanceof VoidType)
+            return null;
         if (!expressionTypeChecker.SubtypeChecking(returnStmt.getReturnedExpr().accept(expressionTypeChecker), currentMethod.getReturnType()))
             returnStmt.addError(new ReturnValueNotMatchMethodReturnType(returnStmt));
         return null;
@@ -301,10 +302,8 @@ public class TypeChecker extends Visitor<Void> {
     // Checked
     @Override
     public Void visit(SetDelete setDelete) {
-//        Type argType = setDelete.getElementArg().accept(expressionTypeChecker);
-//        if (!expressionTypeChecker.isFirstSubTypeOfSecond(argType, IntType) || argType instanceof NoType){
-//
-//        }
+        setDelete.getSetArg().accept(expressionTypeChecker);
+        setDelete.getElementArg().accept(expressionTypeChecker);
         return null;
     }
 
@@ -323,7 +322,7 @@ public class TypeChecker extends Visitor<Void> {
                     setMerge.addError(exception);
                 }
             } else */
-            if (!(argType instanceof SetType || argType instanceof IntType || argType instanceof NoType))
+            if (!(argType instanceof SetType || argType instanceof NoType))
                 setMerge.addError(new MergeInputNotSet(setMerge.getLine()));
         } else {
             //TODO: Is comma-seperated-ints == single-int the case?
@@ -336,6 +335,7 @@ public class TypeChecker extends Visitor<Void> {
                 }
             }
         }
+        setMerge.getSetArg().accept(expressionTypeChecker);
         return null;
     }
 
