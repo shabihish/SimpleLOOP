@@ -1,33 +1,30 @@
 package main.visitor.typeChecker;
 
 import main.ast.nodes.declaration.classDec.ClassDeclaration;
+import main.ast.nodes.expression.*;
 import main.ast.nodes.declaration.classDec.classMembersDec.ConstructorDeclaration;
 import main.ast.nodes.declaration.classDec.classMembersDec.FieldDeclaration;
-import main.ast.nodes.declaration.classDec.classMembersDec.MethodDeclaration;
-import main.ast.nodes.expression.*;
 import main.ast.nodes.expression.operators.TernaryOperator;
-import main.ast.nodes.expression.operators.UnaryOperator;
-import main.ast.nodes.expression.values.NullValue;
 import main.ast.nodes.expression.values.SetValue;
-import main.ast.nodes.expression.values.Value;
-import main.ast.nodes.expression.values.primitive.BoolValue;
-import main.ast.nodes.expression.values.primitive.IntValue;
+import main.ast.nodes.expression.operators.UnaryOperator;
+import main.ast.nodes.declaration.classDec.classMembersDec.MethodDeclaration;
 import main.ast.types.Type;
+import main.ast.nodes.expression.values.NullValue;
+import main.ast.nodes.expression.values.primitive.BoolValue;
 import main.symbolTable.utils.graph.Graph;
-import main.util.ArgPair;
-import main.visitor.Visitor;
 
+import main.visitor.Visitor;
+import main.util.ArgPair;
+import main.ast.nodes.expression.values.Value;
+import main.ast.nodes.expression.values.primitive.IntValue;
 import main.ast.nodes.*;
 //types
 import main.ast.types.array.ArrayType;
 import main.ast.types.set.SetType;
-import main.ast.types.functionPointer.FptrType;
 import main.ast.types.primitives.*;
-import main.ast.types.NoType;
 import main.ast.types.NullType;
-
-//nodes
-import main.ast.nodes.expression.operators.BinaryOperator;
+import main.ast.types.functionPointer.FptrType;
+import main.ast.types.NoType;
 
 //exceptions
 import main.compileError.typeError.*;
@@ -35,6 +32,10 @@ import main.symbolTable.items.ClassSymbolTableItem;
 import main.symbolTable.SymbolTable;
 import main.symbolTable.items.*;
 import main.symbolTable.exceptions.*;
+
+//nodes
+import main.ast.nodes.expression.operators.BinaryOperator;
+
 //import main.symbolTable.utils.*;
 import main.ast.types.primitives.*;
 
@@ -132,10 +133,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
 
     }
 
-    public boolean TypesMatch(Type firstType, Type secondType) {
-        // TODO: Shouldn't this also check the inverse case?
-        return SubtypeChecking(firstType, secondType);
-    }
 
     public boolean isLvalue(Expression expression) {
         boolean prevIsCatchErrorsActive = Node.isCatchErrorsActive;
@@ -150,10 +147,11 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         return isExpressionLValue;
     }
 
-    // assign,
-    // eq, gt, lt, add, sub
-    // mult, div,
-    // and, or
+    public boolean TypesMatch(Type firstType, Type secondType) {
+        // TODO: Shouldn't this also check the inverse case?
+        return SubtypeChecking(firstType, secondType);
+    }
+
     private boolean IsEqualityExprType(Type type) {
         if (type instanceof SetType || type instanceof ArrayType)
             return false;
@@ -171,7 +169,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
 
         if (firstExprType instanceof NoType && secondExprType instanceof NoType)
             return new NoType();
-
 
         else if (opt.equals(BinaryOperator.eq)) {
             if ((IsEqualityExprType(firstExprType) && !IsEqualityExprType(secondExprType)) || (IsEqualityExprType(secondExprType) && !IsEqualityExprType(firstExprType))) {
@@ -239,7 +236,7 @@ public class ExpressionTypeChecker extends Visitor<Type> {
 
 
     @Override
-    public Type visit(NewClassInstance newClassInstance) { //just type
+    public Type visit(NewClassInstance newClassInstance) {
         this.isExpressionLValue = false;
         ClassType classtype = newClassInstance.getClassType();
         String classname = classtype.getClassName().getName();
@@ -285,7 +282,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
 
 
     @Override
-    //not, minus, postinc, postdec
     public Type visit(UnaryExpression unaryExpression) {
         this.isExpressionLValue = false;
         Type operandType = unaryExpression.getOperand().accept(this);
@@ -399,11 +395,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         }
 
         if (type instanceof ClassType) {
-//            String className = ((ClassType) type).getClassName().getName();
-//            if (!classHierarchy.doesGraphContainNode(className)) {
-//                node.addError(new ClassNotDeclared(((ClassDeclaration) node).getLine(), className));
-//                return false;
-//            }
             String className = ((ClassType) type).getClassName().getName();
             if (!this.classHierarchy.doesGraphContainNode(className)) {
                 ClassNotDeclared exception = new ClassNotDeclared(node.getLine(), className);
