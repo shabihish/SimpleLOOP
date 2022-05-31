@@ -101,7 +101,7 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         if (t1 instanceof NullType && (t2 instanceof NullType || t2 instanceof FptrType || t2 instanceof ClassType))
             return true;
 
-        if (t1 instanceof FptrType) {
+        if (t1 instanceof FptrType && t2 instanceof FptrType) {
             if (!SubtypeChecking(((FptrType) t1).getReturnType(), ((FptrType) t2).getReturnType()))
                 return false;
             ArrayList<Type> arg1 = ((FptrType) t1).getArgumentsTypes();
@@ -465,12 +465,12 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         Type instanceType = arrayAccessByIndex.getInstance().accept(this);
         boolean tmp = this.isExpressionLValue;
         this.isExpressionLValue = tmp;
-        if (!(instanceType instanceof ArrayType || instanceType instanceof NoType))
-            if (!this.LValueVisitor)
-                arrayAccessByIndex.addError(new AccessByIndexOnNoneArray(arrayAccessByIndex.getLine()));
-        if (!(indexType instanceof IntType || indexType instanceof NoType)) {
+        if (!(indexType instanceof IntType || indexType instanceof NoType))
             if (!this.LValueVisitor)
                 arrayAccessByIndex.addError(new ArrayIndexNotInt(arrayAccessByIndex.getLine()));
+        if (!(indexType instanceof ArrayType || indexType instanceof NoType)) {
+            if (!this.LValueVisitor)
+                arrayAccessByIndex.addError(new AccessByIndexOnNoneArray(arrayAccessByIndex.getLine()));
             return new NoType();
         }
         if (instanceType instanceof ArrayType) {
