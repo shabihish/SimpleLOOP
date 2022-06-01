@@ -1,5 +1,6 @@
 package main;
 
+import main.visitor.typeChecker.TypeChecker;
 import main.visitor.utils.ASTTreePrinter;
 import main.visitor.utils.ErrorReporter;
 import parsers.*;
@@ -20,7 +21,15 @@ public class SimpleLOOPCompiler {
 
         NameAnalyzer nameAnalyzer = new NameAnalyzer(program);
         nameAnalyzer.analyze();
+
+        TypeChecker typeChecker = new TypeChecker(nameAnalyzer.getClassHierarchy());
+        program.accept(typeChecker);
+
         int numberOfErrors = program.accept(errorReporter);
+        if(numberOfErrors > 0) {
+            return;
+        }
+        // TODO: Should also the AST be printed in case of no errors?
         if(numberOfErrors == 0)
             program.accept(astTreePrinter);
 

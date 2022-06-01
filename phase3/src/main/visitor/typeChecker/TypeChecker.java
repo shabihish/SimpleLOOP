@@ -1,30 +1,32 @@
 package main.visitor.typeChecker;
 
 import main.ast.nodes.*;
-import main.ast.nodes.declaration.classDec.ClassDeclaration;
 import main.ast.nodes.declaration.classDec.classMembersDec.ConstructorDeclaration;
 import main.ast.nodes.declaration.classDec.classMembersDec.FieldDeclaration;
 import main.ast.nodes.declaration.classDec.classMembersDec.MethodDeclaration;
-import main.ast.nodes.declaration.variableDec.VariableDeclaration;
-import main.ast.nodes.expression.*;
-import main.ast.nodes.expression.operators.BinaryOperator;
-import main.ast.nodes.statement.*;
 import main.ast.nodes.statement.set.*;
+import main.ast.nodes.expression.*;
+import main.ast.nodes.declaration.variableDec.VariableDeclaration;
+import main.ast.nodes.expression.operators.BinaryOperator;
+import main.ast.nodes.declaration.classDec.ClassDeclaration;
 import main.ast.types.NoType;
-import main.ast.types.NullType;
 import main.ast.types.Type;
-import main.ast.types.array.ArrayType;
+import main.ast.types.NullType;
 import main.ast.types.functionPointer.FptrType;
+import main.ast.types.array.ArrayType;
+import main.ast.nodes.statement.*;
 import main.ast.types.primitives.BoolType;
-import main.ast.types.primitives.ClassType;
-import main.ast.types.primitives.IntType;
-import main.ast.types.set.SetType;
-import main.compileError.typeError.*;
-import main.symbolTable.utils.graph.Graph;
 import main.util.ArgPair;
+import main.ast.types.primitives.IntType;
+import main.ast.types.primitives.VoidType;
+import main.compileError.typeError.*;
+import main.ast.types.primitives.ClassType;
+import main.symbolTable.utils.graph.Graph;
+import main.ast.types.set.SetType;
 import main.visitor.*;
 
 import javax.swing.plaf.nimbus.State;
+import java.util.ArrayList;
 
 public class TypeChecker extends Visitor<Void> {
 
@@ -34,10 +36,14 @@ public class TypeChecker extends Visitor<Void> {
     private ClassDeclaration currentClass;
     private MethodDeclaration currentMethod;
 
+
     // Checked
     public TypeChecker(Graph<String> classHierarchy) {
         this.expressionTypeChecker = new ExpressionTypeChecker(classHierarchy);
     }
+
+    private boolean doesConditionalReturn(Statement statement){         Statement thenStmt = ((ConditionalStmt) statement).getThenBody();         Statement elseStmt = ((ConditionalStmt) statement).getElseBody();         ArrayList<ElsifStmt> elsifStmts = ((ConditionalStmt) statement).getElsif();         if (doesReturn(thenStmt)) {             for (ElsifStmt elsStmt : elsifStmts) {                 if (!doesReturn(elsStmt.getThenBody())) {                     return false;                 }             }             if (elseStmt == null)                 return false;             return doesReturn(elseStmt);         } else {             return false;         }     }
+    private boolean doesReturn(Statement statement) {         if (statement instanceof EachStmt) {             return doesReturn(((EachStmt) statement).getBody());         } else if (statement instanceof BlockStmt) {             for (Statement statement1 : ((BlockStmt) statement).getStatements()) {                 if (doesReturn(statement1))                     return true;             }         } else if (statement instanceof ConditionalStmt) {             return doesConditionalReturn(statement);         } else if (statement instanceof ReturnStmt) {             return true;         } else return statement == null;         return false;     }
 
     // Checked
     @Override
@@ -79,7 +85,7 @@ public class TypeChecker extends Visitor<Void> {
             if (classDeclaration.getConstructor() == null)
                 classDeclaration.addError(new NoConstructorInMainClass(classDeclaration));
             else if (classDeclaration.getConstructor().getArgs().size() != 0)
-                classDeclaration.addError(new MainConstructorCantHaveArgs(classDeclaration.getLine()));
+                classDeclaration.addError(new MainConstructorCantHaveArgs(classDeclaration.getConstructor().getLine()));//change getline for test 58
         }
 
         // TODO: Double check the correctness.
@@ -93,6 +99,7 @@ public class TypeChecker extends Visitor<Void> {
             expressionTypeChecker.setCurrentMethod(methodDeclaration);
             currentMethod = methodDeclaration;
             methodDeclaration.accept(this);
+            if (methodDeclaration.getDoesReturn() && (methodDeclaration.getReturnType() instanceof VoidType)){methodDeclaration.addError(new VoidMethodHasReturn(methodDeclaration)); }else if (!methodDeclaration.getDoesReturn() && !(methodDeclaration.getReturnType() instanceof VoidType)){methodDeclaration.addError(new MissingReturnStatement(methodDeclaration));}
 //            boolean doesReturn = methodDeclaration.getDoesReturn();
 //
 //            if (methodDeclaration.getReturnType() instanceof NullType && doesReturn) {
@@ -115,13 +122,15 @@ public class TypeChecker extends Visitor<Void> {
     @Override
     public Void visit(ConstructorDeclaration constructorDeclaration) {
         //TODO: Does this work?
-        ((MethodDeclaration) constructorDeclaration).accept(this);
+//        ((MethodDeclaration) constructorDeclaration).accept(this);
+        visit((MethodDeclaration) constructorDeclaration);
         return null;
     }
 
     // Checked
     @Override
     public Void visit(MethodDeclaration methodDeclaration) {
+        boolean doesReturn = false;
         expressionTypeChecker.checkTypeValidation(methodDeclaration.getReturnType(), methodDeclaration);
         for (ArgPair arg : methodDeclaration.getArgs()) {
             arg.getVariableDeclaration().accept(this);
@@ -141,14 +150,14 @@ public class TypeChecker extends Visitor<Void> {
 
 //        boolean hasReturned = false;
         for (Statement statement : methodDeclaration.getBody()) {
+            if (doesReturn){
+                statement.addError(new UnreachableStatements(statement));
+                break;
+            }
             statement.accept(this);
-//            if (hasReturned) {
-//                UnreachableStatements exception = new UnreachableStatements(statement);
-//                statement.addError(exception);
-//            }
-//            if (statement instanceof ReturnStmt) {
-//                hasReturned = true;
+            doesReturn = doesReturn || doesReturn(statement);
         }
+        methodDeclaration.setDoesReturn(doesReturn);
         return null;
     }
 
@@ -171,6 +180,7 @@ public class TypeChecker extends Visitor<Void> {
     public Void visit(AssignmentStmt assignmentStmt) {
         Type firstType = assignmentStmt.getlValue().accept(expressionTypeChecker);
         Type secondType = assignmentStmt.getrValue().accept(expressionTypeChecker);
+
         boolean isLeftLValue = expressionTypeChecker.isLvalue(assignmentStmt.getlValue());
         if (!isLeftLValue)
             assignmentStmt.addError(new LeftSideNotLvalue(assignmentStmt.getLine()));
@@ -185,8 +195,15 @@ public class TypeChecker extends Visitor<Void> {
     // Checked
     @Override
     public Void visit(BlockStmt blockStmt) {
-        for (Statement statement : blockStmt.getStatements())
+        boolean doesReturn = false;
+        for (Statement statement : blockStmt.getStatements()){
+            if (doesReturn){
+                statement.addError(new UnreachableStatements(statement));
+                break;
+            }
             statement.accept(this);
+            doesReturn = doesReturn || doesReturn(statement);
+        }
         return null;
     }
 
@@ -221,7 +238,9 @@ public class TypeChecker extends Visitor<Void> {
     // Checked
     @Override
     public Void visit(MethodCallStmt methodCallStmt) {
+        expressionTypeChecker.setIsInMethodCallStmt(true);
         methodCallStmt.getMethodCall().accept(expressionTypeChecker);
+        expressionTypeChecker.setIsInMethodCallStmt(false);
         return null;
     }
 
@@ -236,10 +255,11 @@ public class TypeChecker extends Visitor<Void> {
         return null;
     }
 
-
     // Checked
     @Override
     public Void visit(ReturnStmt returnStmt) {
+        if (currentMethod.getReturnType() instanceof VoidType)
+            return null;
         if (!expressionTypeChecker.SubtypeChecking(returnStmt.getReturnedExpr().accept(expressionTypeChecker), currentMethod.getReturnType()))
             returnStmt.addError(new ReturnValueNotMatchMethodReturnType(returnStmt));
         return null;
@@ -252,11 +272,22 @@ public class TypeChecker extends Visitor<Void> {
         Type listType = eachStmt.getList().accept(expressionTypeChecker);
         // TODO: Could listType also be an instance of SetType?
         //I dont know why the hell instanceof is not working
-        if (!(listType instanceof ArrayType || listType instanceof NoType))
+        // if (!(listType instanceof ArrayType || listType instanceof NoType))
+        //eachStmt.addError(new EachCantIterateNoneArray(eachStmt.getLine()));
+
+        if (!(listType.toString().equals("ArrayType") || listType instanceof NoType)) {
             eachStmt.addError(new EachCantIterateNoneArray(eachStmt.getLine()));
+            return null;
+        }
+        boolean typesMatch = expressionTypeChecker.VarTypeMatchArrayType(listType, varType);
+        if (!typesMatch) {
+            eachStmt.addError(new EachVarNotMatchList(eachStmt));
+            // TODO: Shouldn't also return in here?
+        }
+
+        eachStmt.getBody().accept(this);
         return null;
     }
-
 
 //        boolean typesMatch = expressionTypeChecker.VarTypeMatchArrayType(listType, varType);
 //        if (!typesMatch) {
@@ -283,10 +314,8 @@ public class TypeChecker extends Visitor<Void> {
     // Checked
     @Override
     public Void visit(SetDelete setDelete) {
-//        Type argType = setDelete.getElementArg().accept(expressionTypeChecker);
-//        if (!expressionTypeChecker.isFirstSubTypeOfSecond(argType, IntType) || argType instanceof NoType){
-//
-//        }
+        setDelete.getSetArg().accept(expressionTypeChecker);
+        setDelete.getElementArg().accept(expressionTypeChecker);
         return null;
     }
 
@@ -296,6 +325,7 @@ public class TypeChecker extends Visitor<Void> {
     // Checked
     @Override
     public Void visit(SetMerge setMerge) {
+
         if (setMerge.getElementArgs().size() == 1) {
             Expression arg = setMerge.getElementArgs().get(0);
             Type argType = arg.accept(expressionTypeChecker);
@@ -305,7 +335,7 @@ public class TypeChecker extends Visitor<Void> {
                     setMerge.addError(exception);
                 }
             } else */
-            if (!(argType instanceof SetType || argType instanceof IntType || argType instanceof NoType))
+            if (!(argType instanceof SetType || argType instanceof NoType))
                 setMerge.addError(new MergeInputNotSet(setMerge.getLine()));
         } else {
             //TODO: Is comma-seperated-ints == single-int the case?
@@ -314,17 +344,20 @@ public class TypeChecker extends Visitor<Void> {
                 if (!(type instanceof IntType || type instanceof NoType)) {
                     setMerge.addError(new MergeInputNotSet(setMerge.getLine()));
                     //TODO: Should it also return here?
+                    setMerge.getSetArg().accept(expressionTypeChecker); //added for test case 17
                     return null;
                 }
             }
         }
+        setMerge.getSetArg().accept(expressionTypeChecker);
         return null;
     }
 
     // Checked
     @Override
     public Void visit(SetAdd setAdd) {
-        Type type = setAdd.getElementArg().accept(expressionTypeChecker);
+        Type type = setAdd.getElementArg().accept(expressionTypeChecker); //added for test case 5
+        Type instancetype = setAdd.getSetArg().accept(expressionTypeChecker);
         if (!(type instanceof IntType || type instanceof NoType))
             setAdd.addError(new AddInputNotInt(setAdd.getLine()));
         return null;

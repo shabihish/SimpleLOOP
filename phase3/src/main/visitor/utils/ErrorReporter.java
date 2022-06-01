@@ -250,7 +250,7 @@ public class ErrorReporter extends Visitor<Integer> {
     public Integer visit(SetInclude setInclude) {
         int numOfErrors = printErrors(setInclude);
         numOfErrors += setInclude.getSetArg().accept(this);
-        numOfErrors += setInclude.getSetArg().accept(this);
+        numOfErrors += setInclude.getElementArg().accept(this);
         return numOfErrors;
     }
 
