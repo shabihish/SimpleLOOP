@@ -82,7 +82,7 @@ public class TypeChecker extends Visitor<Void> {
             if (classDeclaration.getConstructor() == null)
                 classDeclaration.addError(new NoConstructorInMainClass(classDeclaration));
             else if (classDeclaration.getConstructor().getArgs().size() != 0)
-                classDeclaration.addError(new MainConstructorCantHaveArgs(classDeclaration.getLine()));
+                classDeclaration.addError(new MainConstructorCantHaveArgs(classDeclaration.getConstructor().getLine()));//change getline for test 58
         }
 
         // TODO: Double check the correctness.
@@ -313,6 +313,7 @@ public class TypeChecker extends Visitor<Void> {
     // Checked
     @Override
     public Void visit(SetMerge setMerge) {
+
         if (setMerge.getElementArgs().size() == 1) {
             Expression arg = setMerge.getElementArgs().get(0);
             Type argType = arg.accept(expressionTypeChecker);
@@ -331,6 +332,7 @@ public class TypeChecker extends Visitor<Void> {
                 if (!(type instanceof IntType || type instanceof NoType)) {
                     setMerge.addError(new MergeInputNotSet(setMerge.getLine()));
                     //TODO: Should it also return here?
+                    setMerge.getSetArg().accept(expressionTypeChecker); //added for test case 17
                     return null;
                 }
             }
@@ -342,7 +344,8 @@ public class TypeChecker extends Visitor<Void> {
     // Checked
     @Override
     public Void visit(SetAdd setAdd) {
-        Type type = setAdd.getElementArg().accept(expressionTypeChecker);
+        Type type = setAdd.getElementArg().accept(expressionTypeChecker); //added for test case 5
+        Type instancetype = setAdd.getSetArg().accept(expressionTypeChecker);
         if (!(type instanceof IntType || type instanceof NoType))
             setAdd.addError(new AddInputNotInt(setAdd.getLine()));
         return null;
