@@ -327,9 +327,9 @@ public class ExpressionTypeChecker extends Visitor<Type> {
     @Override
     public Type visit(MethodCall methodCall) {
         //Todo
+
         this.isExpressionLValue = false;
         Type instanceType = methodCall.getInstance().accept(this);
-
         ArrayList<Expression> args = methodCall.getArgs();
 
         if (instanceType instanceof FptrType) {
@@ -339,11 +339,13 @@ public class ExpressionTypeChecker extends Visitor<Type> {
                 methodCall.addError(new CantUseValueOfVoidMethod(methodCall.getLine()));
 
             }
+
             ArrayList<Type> argTypes = ((FptrType) instanceType).getArgumentsTypes();
             ArrayList<Type> argsWithType = new ArrayList<>();
             for (int i = 0; i < args.size(); i++) {
                 argsWithType.add(args.get(i).accept(this));
             }
+
             if (argTypes.size() != args.size()) {
                 methodCall.addError(new MethodCallNotMatchDefinition(methodCall.getLine()));
                 return new NoType();
@@ -416,10 +418,14 @@ public class ExpressionTypeChecker extends Visitor<Type> {
         if (!(type instanceof ClassType || type instanceof FptrType || type instanceof ArrayType))
             return true;
         if (type instanceof ArrayType) {
+
             ArrayList<Expression> dims = ((ArrayType) type).getDimensions();
             if (dims.size() == 0) {
                 return false;
             }
+            Type elemtype = ((ArrayType)type).getType();
+            return this.checkTypeExistence(elemtype);
+
         }
         if (type instanceof ClassType) {
             String className = ((ClassType) type).getClassName().getName();
@@ -461,14 +467,16 @@ public class ExpressionTypeChecker extends Visitor<Type> {
     //need check
     public Type visit(ArrayAccessByIndex arrayAccessByIndex) {
         //Todo
-        Type indexType = arrayAccessByIndex.getIndex().accept(this);
         Type instanceType = arrayAccessByIndex.getInstance().accept(this);
         boolean tmp = this.isExpressionLValue;
+        Type indexType = arrayAccessByIndex.getIndex().accept(this);
+
+
         this.isExpressionLValue = tmp;
         if (!(indexType instanceof IntType || indexType instanceof NoType))
             if (!this.LValueVisitor)
                 arrayAccessByIndex.addError(new ArrayIndexNotInt(arrayAccessByIndex.getLine()));
-        if (!(indexType instanceof ArrayType || indexType instanceof NoType)) {
+        if (!(instanceType instanceof ArrayType || instanceType instanceof NoType)) {
             if (!this.LValueVisitor)
                 arrayAccessByIndex.addError(new AccessByIndexOnNoneArray(arrayAccessByIndex.getLine()));
             return new NoType();
