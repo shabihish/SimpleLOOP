@@ -326,8 +326,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
 
     @Override
     public Type visit(MethodCall methodCall) {
-        //Todo
-
         this.isExpressionLValue = false;
         Type instanceType = methodCall.getInstance().accept(this);
         ArrayList<Expression> args = methodCall.getArgs();
@@ -337,7 +335,6 @@ public class ExpressionTypeChecker extends Visitor<Type> {
             if (((FptrType) instanceType).getReturnType() instanceof VoidType && !isInMethodCallStmt) {
                 flag = true;
                 methodCall.addError(new CantUseValueOfVoidMethod(methodCall.getLine()));
-
             }
 
             ArrayList<Type> argTypes = ((FptrType) instanceType).getArgumentsTypes();

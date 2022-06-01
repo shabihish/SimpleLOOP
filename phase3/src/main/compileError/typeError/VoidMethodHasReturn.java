@@ -6,7 +6,7 @@ import main.compileError.CompileError;
 public class VoidMethodHasReturn extends CompileError {
 
     public VoidMethodHasReturn(MethodDeclaration methodDeclaration) {
-        super(methodDeclaration.getLine(), "Method "+  methodDeclaration.getMethodName().getName() + " should not have a return statement\n");
+        super(methodDeclaration.getLine(), "Method "+  methodDeclaration.getMethodName().getName() + " should not have a return statement");
     }
 
 }

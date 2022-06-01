@@ -26,6 +26,7 @@ import main.ast.types.set.SetType;
 import main.visitor.*;
 
 import javax.swing.plaf.nimbus.State;
+import java.util.ArrayList;
 
 public class TypeChecker extends Visitor<Void> {
 
@@ -34,13 +35,15 @@ public class TypeChecker extends Visitor<Void> {
     //    private Graph<String> classHierarchy;
     private ClassDeclaration currentClass;
     private MethodDeclaration currentMethod;
-    private boolean hasReturned = false;
 
 
     // Checked
     public TypeChecker(Graph<String> classHierarchy) {
         this.expressionTypeChecker = new ExpressionTypeChecker(classHierarchy);
     }
+
+    private boolean doesConditionalReturn(Statement statement){         Statement thenStmt = ((ConditionalStmt) statement).getThenBody();         Statement elseStmt = ((ConditionalStmt) statement).getElseBody();         ArrayList<ElsifStmt> elsifStmts = ((ConditionalStmt) statement).getElsif();         if (doesReturn(thenStmt)) {             for (ElsifStmt elsStmt : elsifStmts) {                 if (!doesReturn(elsStmt.getThenBody())) {                     return false;                 }             }             if (elseStmt == null)                 return false;             return doesReturn(elseStmt);         } else {             return false;         }     }
+    private boolean doesReturn(Statement statement) {         if (statement instanceof EachStmt) {             return doesReturn(((EachStmt) statement).getBody());         } else if (statement instanceof BlockStmt) {             for (Statement statement1 : ((BlockStmt) statement).getStatements()) {                 if (doesReturn(statement1))                     return true;             }         } else if (statement instanceof ConditionalStmt) {             return doesConditionalReturn(statement);         } else if (statement instanceof ReturnStmt) {             return true;         } else return statement == null;         return false;     }
 
     // Checked
     @Override
@@ -96,6 +99,7 @@ public class TypeChecker extends Visitor<Void> {
             expressionTypeChecker.setCurrentMethod(methodDeclaration);
             currentMethod = methodDeclaration;
             methodDeclaration.accept(this);
+            if (methodDeclaration.getDoesReturn() && (methodDeclaration.getReturnType() instanceof VoidType)){methodDeclaration.addError(new VoidMethodHasReturn(methodDeclaration)); }else if (!methodDeclaration.getDoesReturn() && !(methodDeclaration.getReturnType() instanceof VoidType)){methodDeclaration.addError(new MissingReturnStatement(methodDeclaration));}
 //            boolean doesReturn = methodDeclaration.getDoesReturn();
 //
 //            if (methodDeclaration.getReturnType() instanceof NullType && doesReturn) {
@@ -126,6 +130,7 @@ public class TypeChecker extends Visitor<Void> {
     // Checked
     @Override
     public Void visit(MethodDeclaration methodDeclaration) {
+        boolean doesReturn = false;
         expressionTypeChecker.checkTypeValidation(methodDeclaration.getReturnType(), methodDeclaration);
         for (ArgPair arg : methodDeclaration.getArgs()) {
             arg.getVariableDeclaration().accept(this);
@@ -145,14 +150,14 @@ public class TypeChecker extends Visitor<Void> {
 
 //        boolean hasReturned = false;
         for (Statement statement : methodDeclaration.getBody()) {
+            if (doesReturn){
+                statement.addError(new UnreachableStatements(statement));
+                break;
+            }
             statement.accept(this);
-//            if (hasReturned) {
-//                UnreachableStatements exception = new UnreachableStatements(statement);
-//                statement.addError(exception);
-//            }
-//            if (statement instanceof ReturnStmt) {
-//                hasReturned = true;
+            doesReturn = doesReturn || doesReturn(statement);
         }
+        methodDeclaration.setDoesReturn(doesReturn);
         return null;
     }
 
@@ -190,8 +195,15 @@ public class TypeChecker extends Visitor<Void> {
     // Checked
     @Override
     public Void visit(BlockStmt blockStmt) {
-        for (Statement statement : blockStmt.getStatements())
+        boolean doesReturn = false;
+        for (Statement statement : blockStmt.getStatements()){
+            if (doesReturn){
+                statement.addError(new UnreachableStatements(statement));
+                break;
+            }
             statement.accept(this);
+            doesReturn = doesReturn || doesReturn(statement);
+        }
         return null;
     }
 
